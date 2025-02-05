@@ -1,0 +1,355 @@
+<script>
+
+const prefix_topojson = 'topojson_-_';
+
+async function loadTopojsonData(filePath) {
+  const fileName = prefix_topojson + filePath.split('/').pop().replace('.json', ''); 
+//   console.log(fileName);
+  try {
+    const storedData = localStorage.getItem(fileName);
+    if (storedData) {
+      return JSON.parse(storedData);
+    }
+  } catch (error) {
+    console.error("Error loading from localStorage:", error);
+  }
+
+  try {
+    const response = await fetch(filePath);
+    if (!response.ok) {
+      throw new Error(`Network response was not ok (${response.status})`);
+    }
+    const topojsonData = await response.json();
+    // console.log(topojsonData);
+    localStorage.setItem(fileName, JSON.stringify(topojsonData));
+    return topojsonData;
+  } catch (error) {
+    console.error("Error loading TopoJSON data:", error);
+    return null;
+  }
+}
+
+async function loadAllTopojson(){
+    const dict_topojson_files = {{ dict_topojson|tojson }}
+    {% for topo in dict_topojson %}
+    topojson_filepath = '{{url_for("static",filename="topojson/"+topo)}}';
+    dict_topojson_files['{{topo}}']['topo'] = await loadTopojsonData(topojson_filepath);
+    {% endfor %}
+    return dict_topojson_files;
+}
+
+    
+function create_c_map(topojsonData, data_map, targetElementId='map_destinations',w=400,h=400,col='tavg_med',mapId=1,palette=palette_temperatures,month_start=1,place_name='',factor_text=40){
+        const margin = { top:0, right:0, bottom:0, left:0 };
+        let width = w - margin.left - margin.right; 
+        let height = h - margin.top - margin.bottom;
+        // console.log(`width: ${width}`);
+        // console.log(`height: ${height}`);
+        const svg = d3.select(`#${targetElementId}`)
+            .append("svg")
+                .attr("width","100%")
+                .attr("height","100%")
+                .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+                .attr("preserveAspectRatio", "xMinYMid meet") 
+            
+        const projection = d3.geoMercator();
+
+        const path = d3.geoPath()
+            .projection(projection);
+
+        const countries = topojson.feature(topojsonData, topojsonData.objects.data); 
+
+        const bounds = path.bounds(countries);
+        
+        const [[x0, y0], [x1, y1]] = bounds;
+
+        const dataWidth = Math.abs(x1 - x0);
+        const dataHeight = Math.abs(y1 - y0);
+        let dataAspectRatio = dataWidth / dataHeight;
+
+
+        // console.log(topojsonData);
+        // console.log(topojsonData.bbox);
+        // console.log(`bbox: ${topojsonData.bbox}`);
+        // console.log(`dataAspectRatio before: ${dataAspectRatio}`);
+        dataAspectRatio = Math.max(dataAspectRatio,0.8);
+        // console.log(`dataAspectRatio after: ${dataAspectRatio}`);
+  
+        if (dataAspectRatio > 1) { // Data is wider than it is tall
+            width = height * dataAspectRatio; 
+        } else { // Data is taller than it is wide
+            height = width / dataAspectRatio;
+        }
+        
+        let fontSize = width/factor_text;
+        // let fontSize = Math.max(width,height)/factor_text;
+        // console.log(`bounds: ${bounds}`);
+        // console.log(`centroid: ${path.centroid(countries)}`);
+        // console.log(`width: ${width}`);
+        // console.log(`height: ${height}`);
+        // console.log(countries);
+        projection.fitExtent([[0, 0], [width, height]], countries);
+
+        svg.attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`);
+  
+        svg.selectAll("path")
+            .data(countries.features)
+            .enter()
+            .append("path")
+                .attr("d", path)
+                .attr("class", d => d.properties.highlight === 'inactive' ? 'fill-gray-50' : 'fill-gray-200')
+                .attr("data-iso3", d => d.properties.iso3)
+                .classed('stroke-white stroke-1',true);
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const dataGroup = g.append("g");
+
+        const paletteKeys = Object.keys(palette).map(Number).sort(function(a, b){return a - b})
+        
+        // console.log(data_map.filter(d => d.m === 1 && d.Map === mapId));
+
+        const label_class = `mapLabel_${col}`
+        var labels = svg.selectAll('labels')
+            .data(data_map.filter(d => d.m === 1 && d.Map === mapId))
+            .enter().append('g')
+                .attr('class',label_class)
+                .attr("transform", function(d) {
+                        return "translate(" + projection([d.Lon, d.Lat]) + ")" ;
+                    })
+                .append("text") 
+                .text(d => d.Place)
+                    .classed('font-bold fill-red-500',function(d){
+                        if(d.Place === place_name && place_name != ''){return true}else{return false}
+                    })
+                    // .attr("text-anchor", "middle")
+                    // .attr("dy", "0.3em")
+                    .attr("text-anchor", function(d) { 
+                        if (d.Label && d.Label.includes('r')) { 
+                            return "start"; 
+                        } else if (d.Label && d.Label.includes('l')) { 
+                            return "end"; 
+                        } else { 
+                            return "middle"; 
+                        }
+                    })
+                    .attr("dy", function(d) { 
+                        if (d.Label && d.Label.includes('t')) { 
+                            if(d.Label.includes('r')||d.Label.includes('l')){
+                                return -1*fontSize; 
+                            } else {
+                                return -1.5*fontSize; 
+                            }
+                            // return -1.3*width/40; 
+                        } else if (d.Label && d.Label.includes('b')) { 
+                            if(d.Label.includes('r')||d.Label.includes('l')){
+                                return 1.5*fontSize; 
+                            } else {
+                                return 2*fontSize; 
+                            }
+                            
+                        } else { 
+                            return "0.3em"; 
+                        }
+                    })
+                    .attr("dx", function(d) { 
+                        if (d.Label && d.Label.includes('r')) { 
+                            if(d.Label.includes('b')||d.Label.includes('t')){
+                                return fontSize; 
+                            } else {
+                                return 1.3*fontSize; 
+                            }
+                            // return 1.3*width/40; 
+                        } else if (d.Label && d.Label.includes('l')) { 
+                            if(d.Label.includes('b')||d.Label.includes('t')){
+                                return -0.8*fontSize; 
+                            } else {
+                                return -1.3*fontSize; 
+                            }
+                            // return -1.3*width/40; 
+                        } else { 
+                            return "0em"; 
+                        }
+                    })
+                    .style("font-size", fontSize*0.9);
+
+        const month_class = `text_${col}`;
+        const list_months_json = {{list_months|tojson}};
+
+        var elem = svg
+            .selectAll('circles')
+            .data(data_map.filter(d => d.m === month_start && d.Map === mapId))
+        
+        const g_map = `g_map_${col}`
+        
+        var elemEnter = elem.enter()
+            .append('g')
+                .attr('id',d => `${g_map}_${d.Place.replace(' ','_').toLowerCase()}`)
+                .attr("transform", function(d) {
+                        return "translate(" + projection([d.Lon, d.Lat]) + ")" ;
+                    });
+
+        var circlesData = elemEnter
+            .append('circle')
+                .attr("r", fontSize);
+
+        var circlesText = elemEnter
+            .append("text")
+            .text(d => Math.round(d[col]))
+                .attr("text-anchor", "middle")
+                .attr("dy", "0.3em")
+                .classed('fill-gray-800 font-semibold',true)
+                .style("font-size", fontSize);
+        
+        update_c_map(data_map,col=col,m=month_start,palette=palette);
+
+        
+        
+        function updateData(month) {
+
+            var elem = svg
+                .selectAll('circles')
+                .data(data_map.filter(d => d.m === month && d.Map === mapId))
+
+            const point_class = `mapPoint_${mapId}_${col}`
+            
+            document.querySelectorAll(`.${point_class}`).forEach(e => e.remove());
+            // elem.exit().remove();
+
+            const g_map = `g_map_${col}`
+
+            var elemEnter = elem.enter().append('g')
+                .attr('class',point_class)
+                .attr('id',d => `${g_map}_${d.Place.replace(' ','_').toLowerCase()}`)
+                .attr("transform", function(d) {
+                        return "translate(" + projection([d.Lon, d.Lat]) + ")" ;
+                    });
+
+            var circlesData = elemEnter.append('circle')
+                    .attr('class',d => {
+                        const keys = Object.keys(palette);
+                        for (let i = 0; i < paletteKeys.length; i++) {
+                            if (d[col] <= paletteKeys[i]) {
+                                return palette[paletteKeys[i]];
+                            }
+                        }
+                        return "";
+                    })
+                    .attr("r", fontSize);
+
+            var circlesText = elemEnter.append("text")
+                .text(d => Math.round(d[col]))
+                    .attr("text-anchor", "middle")
+                    .attr("dy", "0.3em")
+                    .classed('fill-gray-800 font-semibold',true)
+                    .style("font-size", fontSize);
+            
+            elem.select('circle')
+                .attr('class',d => {
+                    const keys = Object.keys(palette);
+                    for (let i = 0; i < paletteKeys.length; i++) {
+                        if (d[col] <= paletteKeys[i]) {
+                            return palette[paletteKeys[i]];
+                        }
+                    }
+                    return "";
+                });
+
+            elem.select('text')
+                .text(d => Math.round(d[col])); 
+
+        
+            const text_map = document.getElementById(month_class);
+            if (text_map && (mapId===1)){
+                text_map.textContent = list_months_json[month-1];
+            }
+
+        }
+
+        
+        // let currentMonth = month_start;
+        // updateData(currentMonth);
+
+        // const checkbox = document.querySelector(`#button_${col} input[type="checkbox"]`);
+        // let isPlaying = false;
+        
+        // setInterval(() => {
+        //     if (checkbox.checked) {
+
+        //         if (!isPlaying) { 
+        //             isPlaying = true;
+        //         // isPlaying = true;
+
+        //         timer = setInterval(() => {
+        //             let currentMonthName = document.getElementById(month_class).textContent;
+        //             nextMonth = list_months_json.indexOf(currentMonthName)+1;
+        //             nextMonth = (nextMonth % 12) + 1; // Loop through months 1-12
+        //             updateData(nextMonth);
+        //         }, 1000); 
+        //         }
+        //     } else {
+        //         if (isPlaying) { 
+        //         clearInterval(timer); 
+        //         isPlaying = false;
+        //         }
+        //     }
+        //     }, 300);
+
+        // setInterval(() => {
+        // //   console.log(checkbox.checked);
+        //   currentMonth = (currentMonth % 12) + 1; // Loop through months 1-12
+        //   updateData(currentMonth);
+        // }, 1000); // Update every second
+
+    };
+
+
+function update_c_map(data_map,col='tmax_med',m=1,palette=palette_temperatures){
+    data_month = data_map.filter(d => d.m === m)
+    const paletteKeys = Object.keys(palette).map(Number).sort(function(a, b){return a - b});
+    for (const r in data_month){
+        const g_map = `g_map_${col}`
+        let id_g = `${g_map}_${data_month[r]['Place'].replace(' ','_').toLowerCase()}`;
+        let val = Math.round(data_month[r][col]);
+        let g_map_elem = document.getElementById(id_g);
+        if (g_map_elem){
+            g_map_elem.querySelector('text').textContent = val;
+
+            g_map_circle = g_map_elem.querySelector('circle');
+            let circleClasses = (palette[paletteKeys.find(key => val <= key)]);
+            g_map_circle.classList.remove(...g_map_circle.classList);
+            g_map_circle.classList.add(...circleClasses.split(' '));
+        }
+    
+    const month_class = `text_${col}`;
+    const list_months_json = {{list_months|tojson}};
+    const text_map = document.getElementById(month_class);
+            if (text_map){
+                text_map.textContent = list_months_json[m-1];
+            }
+    }
+};
+
+// Assumes timers, isPlaying are all initialized
+function addTimer(checkbox,data_map,col,palette){
+    // console.log(checkbox.checked);
+    if(checkbox.checked){
+        if(!isPlaying[col]){
+            isPlaying[col]=true;
+            timers[col] = setInterval(() => {
+                let currentMonthName = document.getElementById(`text_${col}`).textContent;
+                nextMonth = list_months_json.indexOf(currentMonthName)+1;
+                nextMonth = (nextMonth % 12) + 1; // Loop through months 1-12
+                update_c_map(data_map,col,nextMonth,palette);
+            },1000)
+        }
+    } else {
+        if (isPlaying[col]){
+            clearInterval(timers[col]);
+            isPlaying[col]=false;
+        }
+    }
+}
+
+</script>

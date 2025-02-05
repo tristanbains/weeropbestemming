@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros with context %}
+{% block content %}
+<script src="https://d3js.org/d3.v7.js"></script>
+<div class="mx-auto md:max-w-screen-md px-2 flex flex-col gap-4 pt-8">
+    <div class="flex gap-4">
+        {{ macros.breadcrumbs_dropdown(country=country,place=place,bg='bg-gray-100') }}
+        {{ macros.menu_dropdown_details(country=country,place=place,text_placeholder='Weer per maand voor '+dict_destination['Place'],bg='bg-gray-100') }}
+    </div>
+    
+    <!-- {{macros.menu_months_all(bg=None)}} -->
+    <div class="prose text-pretty px-2">
+        <header>
+            <h1>Het weer en klimaat in {{dict_destination['Place']}}</h1>
+        </header>
+        <article>
+            <p>X Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam felis orci per, metus erat class eu platea cras. Efficitur facilisi parturient; enim dis et turpis. Vitae congue ex dictumst tincidunt luctus nibh volutpat nibh. Molestie risus arcu, ultrices non et aliquam. Ornare maximus diam habitasse platea tempor.</p>
+            <h2>Temperatuur in {{dict_destination['Place']}}</h2>
+            <section>
+                {{
+                    macros.tile_empty(
+                        title='<span class="text-yellow-500">Gemiddelde temperatuur</span> in '+dict_destination['Place']+' over het jaar',
+                        cs=3,rs=3,
+                        disclaimer="X Grafiek laat minimum, maximum en gemiddelde temperatuur per maand in "+dict_destination['Place']+" zien, berekend over recente jaren",
+                        
+                        slug_months=False,
+                        chart='m3_temp_area'
+                        )
+                }}
+            </section>
+        </article>
+        
+        <!-- <p>{{dict_destination}}</p> -->
+        
+        <!-- <p> Justo tincidunt turpis facilisis, faucibus egestas luctus tellus lectus. Tellus cursus orci.</p> -->
+    </div>
+    <div class="gap-4">
+        {{macros.table_m_cp(df_m,cols=['tmax_med','tavg_med','tmin_med'],text_rows=['Maximum ℃','Gemiddelde ℃','Minimum ℃'])}}
+        {{macros.table_m_cp(df_m,cols=['prcp_sum'],text_rows=['Regen (mm)'])}}
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+    </div>
+    <div class="prose text-pretty px-2">
+        
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        
+    </div>
+</div>
+
+
+{% include "d3_cp_area_m3.html"%}
+
+<script>
+    const data_mm3 = {{json_mm3|tojson}};
+    create_cp_area_m3(data_mm3, "m3_temp_area");
+</script>
+{% endblock content%}

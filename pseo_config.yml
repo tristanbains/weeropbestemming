@@ -1,0 +1,9 @@
+# General info
+SITE_URL: https://www.xyz.com/
+AUTHOR: Tristan Bains
+LANG: en
+
+# Design
+DAISYUI_THEME: emerald # Note: must exist in tailwind.config.js
+
+# Schema

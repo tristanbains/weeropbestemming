@@ -1,0 +1,137 @@
+<script>
+    function create_cpm_area_h(data, targetElementId, m3Filter=0){
+        const margin = { top: 20, right: 40, bottom: 30, left: 40 };
+        let width = 400 - margin.left - margin.right; 
+        const height = 200 - margin.top - margin.bottom;
+
+         // Filter data based on m3 input
+        const filteredData = m3Filter !== 0 ? data.filter(d => d.m3 === m3Filter) : data;
+
+        const svg = d3.select(`#${targetElementId}`).append("svg")
+            .attr("width","100%")
+            .attr("height","100%")
+            .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+            .attr("preserveAspectRatio", "xMinYMid meet") 
+            .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+        const x = d3.scaleLinear()
+            .domain(d3.extent(filteredData, d => d.h)) 
+            .range([0, width]);
+            
+        const y = d3.scaleLinear()
+            .domain([d3.min(filteredData, d => d.temp_lb) - 3, d3.max(filteredData, d => d.temp_ub) + 3]) // Add some padding to y-axis
+            .range([height, 0]);
+
+        const line = d3.line()
+            .x(d => x(d.h))
+            .y(d => y(d.temp_med))
+            .curve(d3.curveNatural);
+
+        const area = d3.area()
+            .x(d => x(d.h))
+            .y0(d => y(d.temp_lb))
+            .y1(d => y(d.temp_ub))
+            .curve(d3.curveNatural);
+    
+        svg.append("path")  
+            .datum(data)
+            .classed('fill-yellow-200',true)
+            .attr("d", area);
+
+        svg.selectAll(".horizLine")
+            .data(y.ticks(Math.ceil((y.domain()[1] - y.domain()[0]) / 5))
+                .filter(d => d >= d3.min(filteredData, d => d.temp_lb) && d <= d3.max(data, d => d.temp_ub)))
+            .enter()
+            .append("line")
+                .attr("class", "horizLine")
+                .attr("x1", 0)
+                .attr("y1", d => y(d))
+                .attr("x2", width)
+                .attr("y2", d => y(d))
+                .classed('stroke-gray-300',true)
+                .style("stroke-width", d => d % 10 === 0 ? 0.8 : 0.3);
+        
+        svg.selectAll(".vertline")
+            .data(filteredData.filter((d, i) => d.h % 4 === 0 && i > 0 && i < filteredData.length - 1)) 
+            .enter()
+            .append("line")
+                .attr("x1", d => x(d.h))
+                .attr("y1", 0)
+                .attr("x2", d => x(d.h))
+                .attr("y2", height)
+                .classed('stroke-gray-300',true)
+                .style("stroke-width", 0.3);
+
+        svg.append("path")
+            .datum(data) 
+            .attr("fill", "none")
+            // .attr("stroke", "steelblue")
+            .classed('stroke-yellow-600',true)
+            .attr("stroke-width", 1.5)
+            .attr("d", line);
+
+        svg.selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("cx", d => x(d.h))
+            .attr("cy", d => y(d.temp_med))
+            .attr("r", 1.5)
+            .classed('stroke-yellow-600 fill-yellow-600',true)
+            .on("mouseover", function(event, d) { 
+                d3.select(this).attr("r", 5); // Increase circle size on hover
+                const tooltip = d3.select(this.parentNode)
+                    .append("foreignObject") // Use foreignObject to support HTML elements within SVG
+                        .attr("x", x(d.h)-35) 
+                        .attr("y", y(d.temp_med)-40)
+                        .attr("width", "48") // Adjust width as needed
+                        .attr("height", "32") 
+                    .append("xhtml:div") 
+                        .classed('bg-yellow-600 text-white px-2 py-1 rounded-lg text-[8px]',true)
+                        .html(`<p>${d.temp_med.toFixed(1)} ℃</p><p>${d.h < 10 ? "0" + d.h : d.h}h</p>`);
+                        d3.select(`.minLabel_${targetElementId}`).attr('opacity',0);
+                        d3.select(`.maxLabel_${targetElementId}`).attr('opacity',0);
+            })
+            .on("mouseout", function() {
+                d3.select(this)
+                .attr("r", 1.5); // Reset circle size on mouseout
+                d3.select(this.parentNode).select("foreignObject").remove();
+                d3.select(`.minLabel_${targetElementId}`).attr('opacity',1);
+                d3.select(`.maxLabel_${targetElementId}`).attr('opacity',1);
+            }); 
+
+        // Add x-axis
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x).tickFormat(d => (d < 10 ? "0" + d +"h": d+"h")))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.selectAll("line").remove()); 
+                
+        // Add y-axis
+        svg.append("g")
+            .call(d3.axisLeft(y).tickFormat(d => `${d}℃`)
+            .ticks(Math.ceil((y.domain()[1] - y.domain()[0]) / 5)))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.selectAll("line").remove());
+
+        const maxLabel = data.reduce((a, b) => (a.temp_med > b.temp_med ? a : b));
+        svg.append("text")
+            .attr('class',`maxLabel_${targetElementId}`)
+            .attr("x", x(maxLabel.h) + 1)
+            // .attr("text-anchor", "middle") 
+            .attr("y", y(maxLabel.temp_med+1))
+            .text(`${maxLabel.temp_med.toFixed(1)} ℃`)
+            .classed('font-semibold fill-yellow-600 text-xs md:text-[8px]',true);
+
+        const minLabel = data.reduce((a, b) => (a.temp_med < b.temp_med ? a : b));
+        svg.append("text")
+            .attr('class',`minLabel_${targetElementId}`)
+            .attr("x", x(minLabel.h) + 1)
+            // .attr("text-anchor", "middle") 
+            .attr("y", y(minLabel.temp_med-2))
+            .text(`${minLabel.temp_med.toFixed(1)} ℃`)
+            .classed('font-semibold fill-yellow-600 text-xs md:text-[8px]',true);
+
+        };
+</script>

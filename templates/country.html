@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros with context %}
+{% block content %}
+<script src="https://d3js.org/d3.v7.js"></script>
+<script src="https://d3js.org/topojson.v3.min.js"></script> 
+<div class="mx-auto md:max-w-screen-md px-2 flex flex-col gap-4 pt-8">
+    <div class="prose mx-auto text-pretty px-2">
+        <div class="not-prose flex py-2 gap-4">
+            {{ macros.breadcrumbs_dropdown(country=country,bg='bg-gray-100') }}
+            {{ macros.menu_dropdown_details(country=country,text_placeholder='Bestemmingen in '+dict_countries[country]['country_name'],bg='bg-gray-100') }}
+        </div>
+        <header>
+            <h1>
+                Het weer en klimaat in {{dict_countries[country]['country_name']}}
+            </h1>
+        </header>
+         
+        {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
+        
+        <article>    
+            <p>X Op deze pagina vind je data voor temperatuur en regen voor <span class="inline-block">{{dict_countries[country]['n_places']}} bestemmingen</span> in {{dict_countries[country]['country_name']}}</p>
+            <p>X Algemene statistieken, warmste plek, warmste maand, meeste en minste neerslag</p>
+            <h2 id="h2_temp">Temperatuur in {{dict_countries[country]['country_name']}}</h2>
+            <section>
+                <h3 id="heatmap_tavg_med"><span class="text-yellow-500">Gemiddelde temperatuur</span> per maand</h3>
+                <h4 id="mapview_tavg_med">Kaart (animatie) gemiddelde temperatuur</h4>
+                <p>Kaart met gemiddelde temperatuur per maand in {{dict_countries[country]['country_name']}}. Druk op de knop om animatie te starten of pauzeren.</p>
+                {{ macros.map_country(col='tavg_med') }}
+                <h4 id="tableview_tavg_med">Tabel met gemiddelde temperatuur in {{dict_countries[country]['country_name']}}</h4>
+                <p>Sorteer oplopend of aflopend per maand door op de maand te klikken</p>
+                <div class="not-prose">
+                    {{macros.table_m_c(df_m_country,col='tavg_med')}}
+                </div>
+            </section>
+
+            <section>
+                <h3 id="heatmap_tmax_med"><span class="text-yellow-500">Maximum temperatuur</span> per maand</h3>
+                <h4 id="mapview_tmax_med">Kaart (animatie) maximum temperatuur</h4>
+                <p>Kaart met maximum temperatuur per maand in {{dict_countries[country]['country_name']}}. Druk op de knop om animatie te starten of pauzeren.</p>
+                {{ macros.map_country(col='tmax_med') }}
+                <h4 id="tableview_tmax_med">Tabel met maximum temperatuur in {{dict_countries[country]['country_name']}}</h4>
+                <p>Sorteer oplopend of aflopend per maand door op de maand te klikken</p>
+                <div class="not-prose">
+                    {{macros.table_m_c(df_m_country,col='tmax_med')}}
+                </div>
+            </section>
+
+            <h2 id="h2_rain">Regen in {{dict_countries[country]['country_name']}}</h2>
+            <section>
+                <h3 id="heatmap_prcp_sum"><span class="text-blue-500">Regen</span> per maand</h3>
+                <div class="not-prose">
+                    {{macros.table_m_c(df_m_country,col='prcp_sum')}}
+                </div>
+            </section>
+            
+        </article>
+    </div>
+    
+</div>
+
+
+<script>
+    function sortTable(n,col) {
+        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        table = document.getElementById("table_"+col+"_m_c");
+        switching = true;
+        
+        var currentTh = document.getElementById("table_" + col + "_m_c").rows[0].cells[n];
+        
+        dir = currentTh.getAttribute('data-sort') || 'asc'; 
+        table.querySelectorAll('th').forEach(th => {
+            th.classList.remove('text-green-500');
+        
+            th.querySelector('span').innerHTML = ''; 
+        });
+        
+        if (dir === 'asc') {
+            currentTh.querySelector('span').innerHTML = '&#9650;'; // Ascending arrow
+        } else {
+            currentTh.querySelector('span').innerHTML = '&#9660;'; // Descending arrow
+        }
+        currentTh.setAttribute('data-sort', dir === 'asc' ? 'desc' : 'asc');
+        currentTh.classList.add('text-green-500');
+
+        while (switching) {
+          switching = false;
+          rows = table.rows;
+          for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("td")[n];
+            y = rows[i + 1].getElementsByTagName("td")[n];
+            if (n === 0) { // First column (strings)
+                if (dir == "asc") {
+                    if (x.querySelector('a').textContent.toLowerCase() > y.querySelector('a').textContent.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                    } else if (dir == "desc") {
+                    if (x.querySelector('a').textContent.toLowerCase() < y.querySelector('a').textContent.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                    }
+            } else { // Other columns (numbers)
+            xValue = parseFloat(x.querySelector('.col_val').textContent); 
+            yValue = parseFloat(y.querySelector('.col_val').textContent);
+            if (dir == "asc") {
+              if (xValue > yValue) { 
+                shouldSwitch = true;
+                break;
+              }
+            } else if (dir == "desc") {
+              if (xValue < yValue) { 
+                shouldSwitch = true;
+                break;
+              }
+            }
+          }
+          }
+          if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount ++;      
+          } else {
+            if (switchcount == 0 && dir == "asc") {
+              dir = "desc";
+              switching = true;
+            }
+          }
+        }
+      }
+</script>
+<script>
+    const today = new Date();
+    today.setDate(today.getDate() + 7);
+    const month_sort = today.getMonth()+1
+
+    sortTable(month_sort,'tavg_med');
+    sortTable(month_sort,'tavg_med');
+    sortTable(month_sort,'tmax_med');
+    sortTable(month_sort,'tmax_med');
+    sortTable(month_sort,'prcp_sum');
+</script>
+
+{% include "d3_c_map.html"%}
+<script>
+
+    const allTopojsonData = loadAllTopojson();
+    const dataMap = {{json_map_m_country|tojson}};
+    
+    let timers = {};
+    let isPlaying= {};
+    const list_months_json = {{list_months|tojson}};
+
+    // Initialize maps and labels:
+    {% for topo in dict_topojson %}
+        {% if dict_topojson[topo]['status']=='main' %}
+            allTopojsonData.then(data => {
+                const countryTopo = data['{{topo}}'].topo;
+                {% if country in ['portugal'] %}
+                let map1_w = 400;
+                let map1_h = 700;
+                create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId='map_tavg_med',w=map1_w,h=map1_h,col='tavg_med',mapId=1,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=35);
+                create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId='map_tmax_med',w=map1_w,h=map1_h,col='tmax_med',mapId=1,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=35);
+                {% else %}
+                let map1_w = 400;
+                let map1_h = 400;
+                create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId='map_tavg_med',w=map1_w,h=map1_h,col='tavg_med',mapId=1,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=40);
+                create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId='map_tmax_med',w=map1_w,h=map1_h,col='tmax_med',mapId=1,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=40);
+                {% endif %}
+                // create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId='map_tavg_med',w=map1_w,h=map1_h,col='tavg_med',mapId=1,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=40);
+                // create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId='map_tmax_med',w=map1_w,h=map1_h,col='tmax_med',mapId=1,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=40);
+            });  
+
+        {% endif %}
+        {% if topo in ['spanje_canarische-eilanden.json','portugal_azoren.json'] %}
+        allTopojsonData.then(data => {
+                const countryTopo2 = data['{{topo}}'].topo;
+                // const dataMap2 = {{json_map_m_country|tojson}};
+                {% if country == 'spanje' %}
+                create_c_map(topojsonData=countryTopo2, data_map=dataMap, targetElementId='map_tavg_med_2',w=300,h=200,col='tavg_med',mapId=2,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=20);
+                create_c_map(topojsonData=countryTopo2, data_map=dataMap, targetElementId='map_tmax_med_2',w=300,h=200,col='tmax_med',mapId=2,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=20);
+                {% elif country== 'portugal' %}
+                create_c_map(topojsonData=countryTopo2, data_map=dataMap, targetElementId='map_tavg_med_2',w=400,h=200,col='tavg_med',mapId=2,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=12);
+                create_c_map(topojsonData=countryTopo2, data_map=dataMap, targetElementId='map_tmax_med_2',w=400,h=200,col='tmax_med',mapId=2,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=12);
+                {% endif %}
+                // create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId='map_tmax_med',col='tmax_med',mapId=1,palette=palette_temperatures,month_start=3,place_name='Hurghada');
+                // create_c_map(countryTopo,data_map=dataMap,targetElementId='map_tmax_med',w=400,h=400,col='tmax_med',place_name='Hurghada');
+            });
+        {% elif topo in ['portugal_madeira.json'] %}
+        allTopojsonData.then(data => {
+            const countryTopo3 = data['{{topo}}'].topo;
+            create_c_map(topojsonData=countryTopo3, data_map=dataMap, targetElementId='map_tavg_med_3',w=400,h=200,col='tavg_med',mapId=3,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=9);
+            create_c_map(topojsonData=countryTopo3, data_map=dataMap, targetElementId='map_tmax_med_3',w=400,h=200,col='tmax_med',mapId=3,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=9);
+        });
+            
+        // console.log('{{topo}}')
+        {% endif %}
+        
+        
+    {% endfor %}
+
+    // Add animation:
+    setInterval(() => {
+                const checkbox_tavg_med = document.querySelector(`#button_tavg_med input[type="checkbox"]`);
+                const checkbox_tmax_med = document.querySelector(`#button_tmax_med input[type="checkbox"]`);
+                addTimer(checkbox_tavg_med,dataMap,'tavg_med',palette_temperatures);
+                addTimer(checkbox_tmax_med,dataMap,'tmax_med',palette_temperatures);
+
+            },100);   
+    
+    
+    
+    document.getElementById('button_tavg_med').click();
+    document.getElementById('button_tmax_med').click();
+
+</script>
+{% endblock content%}

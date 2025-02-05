@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+
+<html lang="{{dict_config['lang']}}" data-theme="{{dict_config['daisyui_theme']}}" style="scroll-behavior: smooth;"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% if page %}
+            {% if page.title %}
+            {{ page.title }}
+            {% endif %}
+        {% elif dict_page_meta %}
+            {{ dict_page_meta['title'] }}    
+        {% else %}
+        PSEO Placeholder
+        {% endif %}
+    </title>
+
+    <link rel="stylesheet" href="{{url_for('static',filename='css/output.css')}}">
+</head>
+{% set palette_temperatures = {
+    -100: 'bg-blue-500 text-white border-2 border-blue-600 fill-blue-500 stroke-blue-600 stroke-1',
+    -10:'bg-blue-400 text-white border-2 border-blue-500 fill-blue-400 stroke-blue-500 stroke-1',
+    -5:'bg-blue-300 border-2 border-blue-400 fill-blue-300 stroke-blue-400 stroke-1',
+    0:'bg-blue-200 border-2 border-blue-300 fill-blue-200 stroke-blue-300 stroke-1',
+    5:'bg-blue-100 border-2 border-blue-200 fill-blue-100 stroke-blue-200 stroke-1',
+    10: 'bg-blue-50 border-2 border-blue-100 fill-blue-50 stroke-blue-100 stroke-1',
+    15: 'bg-yellow-100 border-2 border-yellow-200 fill-yellow-100 stroke-yellow-200 stroke-1',
+    20: 'bg-yellow-200 border-2 border-yellow-300 fill-yellow-200 stroke-yellow-300 stroke-1',
+    25: 'bg-yellow-300 border-2 border-yellow-400 fill-yellow-300 stroke-yellow-400 stroke-1',
+    30: 'bg-yellow-400 border-2 border-yellow-500 fill-yellow-400 stroke-yellow-500 stroke-1',
+    35: 'bg-yellow-500 border-2 border-yellow-600 fill-yellow-500 stroke-yellow-600 stroke-1',
+    1000: 'bg-yellow-600 border-2 border-yellow-700 fill-yellow-600 stroke-yellow-700 stroke-1',
+    } 
+%}
+
+{% set palette_precipitation = {
+    0:'bg-blue-50',
+    20:'bg-blue-100 border-2 border-blue-200',
+    40: 'bg-blue-200 border-2 border-blue-300',
+    60: 'bg-blue-300 border-2 border-blue-400',
+    80: 'bg-blue-400 border-2 border-blue-500',
+    100: 'bg-blue-500 border-2 border-blue-600 text-white',
+    120: 'bg-blue-600 border-2 border-blue-700 text-white',
+    140: 'bg-blue-700 border-2 border-blue-800 text-white',
+    10000: 'bg-blue-800 border-2 border-blue-900 text-white',
+    } 
+%}
+<body>
+    <script>
+        const palette_temperatures = {{palette_temperatures|tojson}};
+        const palette_precipitation = {{palette_precipitation|tojson}};
+    </script>
+    <div class="xbg-gray-50">
+        {% block content %}
+        <!-- <p>Default content to be displayed</p> -->
+        {% endblock content %}
+    </div>
+</body>
+</html>

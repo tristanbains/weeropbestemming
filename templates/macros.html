@@ -1,0 +1,670 @@
+
+
+<!-- Color palettes:-->
+
+<!-- {% set palette_temperatures = {
+    -100: 'bg-blue-500 text-white border-2 border-blue-600',
+    -10:'bg-blue-400 text-white border-2 border-blue-500',
+    -5:'bg-blue-300 border-2 border-blue-400',
+    0:'bg-blue-200 border-2 border-blue-300',
+    5:'bg-blue-100 border-2 border-blue-200',
+    10: 'bg-blue-50 border-2 border-blue-100',
+    15: 'bg-yellow-100 border-2 border-yellow-200',
+    20: 'bg-yellow-200 border-2 border-yellow-300',
+    25: 'bg-yellow-300 border-2 border-yellow-400',
+    30: 'bg-yellow-400 border-2 border-yellow-500',
+    35: 'bg-yellow-500 border-2 border-yellow-600',
+    1000: 'bg-yellow-600 border-2 border-yellow-700',
+    } 
+%}
+
+{% set palette_precipitation = {
+    0:'bg-blue-50',
+    20:'bg-blue-100 border-2 border-blue-200',
+    40: 'bg-blue-200 border-2 border-blue-300',
+    60: 'bg-blue-300 border-2 border-blue-400',
+    80: 'bg-blue-400 border-2 border-blue-500',
+    100: 'bg-blue-500 border-2 border-blue-600 text-white',
+    120: 'bg-blue-600 border-2 border-blue-700 text-white',
+    140: 'bg-blue-700 border-2 border-blue-800 text-white',
+    10000: 'bg-blue-800 border-2 border-blue-900 text-white',
+    } 
+%} -->
+
+
+<!-- Breadcrumbs: -->
+{% macro breadcrumbs(country_name,place_name=None,month_name=None) %}
+<div class="breadcrumbs">
+    <ul>
+        <li>
+            {% if place_name %}
+            <a href="" class="underline hover:text-primary">
+                <span>
+                    {{country_name}}
+                </span>
+            </a>
+            {% else %}
+            <span>
+                {{country_name}}
+            </span>
+            {% endif %}
+        </li>
+        {% if place_name %}
+        <li>
+            {% if month_name %}
+            <a href="" class="underline hover:text-primary">
+                <span>
+                    {{place_name}}
+                </span>
+            </a>
+            {% else %}
+            <span>
+                {{place_name}}
+            </span>
+            {% endif %}
+        </li>
+        {% endif %}
+        {% if month_name %}
+        <li>
+            <span>
+                {{month_name}}
+            </span>
+        </li>
+        {% endif %}
+    </ul>
+</div>
+{% endmacro %}
+
+<!-- Months: -->
+{% macro links_months(country_name,place_name,list_month,month_n=None) %}
+
+{% endmacro %}
+
+<!-- Table mm3d: -->
+<!-- m	m3	d	tmin_avg	tavg_avg	tmax_avg	prcp_avg	wspd_avg	rain_pct -->
+{% macro table_mm3d(df_mm3d) %}
+<div class="overflow-x-auto max-w-96">
+    <table class="table table-xs ">
+        <thead>
+            <tr>
+                <th>Min.</th>
+                <th>Gem.</th>
+                <th>Max.</th>
+                <th>Regen</th>
+                <th>Kans op regen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i,r in df_mm3d.iterrows() %}
+            <tr>
+                <td>{{r['tmin_avg']}} ℃</td>
+                <td class="font-semibold">{{r['tavg_avg']}} ℃</td>
+                <td>{{r['tmax_avg']}} ℃</td>
+                <td>{{r['prcp_avg']}} mm</td>
+                <td>{{(r['rain_pct']*100) | int}} %</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% endmacro %}
+
+<!-- Menu's, breadcrumbs: -->
+
+<!-- Assumes country and place are known -->
+<!-- Assumes dict_destination has values for list_links_month_name and list_links_month_slug -->
+{% macro menu_months(bg=None) %}
+<ul class="menu menu-xs md:menu-md menu-horizontal rounded-lg {%if bg%}{{bg}}{%else%}bg-gray-100{%endif%}">
+    {% for i in range(5) %}
+    <li>
+        <a 
+        {% if i==2 %}class="active rounded-lg"{% endif %} 
+        {% if i!=2 %}
+            href="{{url_for('country_place_month',country=country,place=place,month=dict_destination['list_links_month_slug'][i])}}"
+        {% endif %} >
+        <p class="text-lg leading-tight">
+            <span class="text-xs font-light">Weer in {{dict_destination['Place']}} in </span><br>
+        <span class="font-bold"></span>{{dict_destination['list_links_month_name'][i]}}
+        </p>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+
+<!-- Assumes country and place are available -->
+{% macro menu_months_all(bg=None) %}
+<ul class="menu menu-xs md:menu-md menu-horizontal rounded-full {%if bg%}{{bg}}{%else%}bg-gray-100{%endif%}">
+    {% for i in range(12) %}
+    <li>
+        <a href="{{url_for('country_place_month',country=country,place=place,month=list_months_slug[i])}}">
+            {{list_months[i]}}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+
+{% macro svg_chevron() %}
+<svg width="3" height="24" viewBox="0 -9 3 24"
+                    class="mr-2 text-slate-400 overflow-visible group-hover:text-sky-500">
+                    <path d="M0 0L3 3L0 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                    </path>
+                </svg>
+<!-- <svg
+    xmlns="http://www.w3.org/2000/svg"
+    class="h-4 w-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor">
+    <path
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="1"
+    d="M9.343 18.657a1 1 0 0 1-.707-1.707l4.95-4.95-4.95-4.95a1 1 0 0 1 1.414-1.414l5.657 5.657a1 1 0 0 1 0 1.414l-5.657 5.657a1 1 0 0 1-.707.293z" />
+</svg> -->
+{% endmacro %}
+
+<!-- Assumes dict_countries is available -->
+<!-- {% macro menu_dropdown_places(country,text_placeholder='',bg=None) %}
+<nav class="text-sm flex items-center max-w-fit gap-1 rounded-xl{%if bg%} {{bg}} py-1 px-2{%endif%}">
+    <div class="dropdown">
+        <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
+            {{text_placeholder}}
+            <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>
+        </div>
+        <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            <ul class="menu w-60 p-2">
+                {% for p in dict_countries[country]['list_place_slugs'] %}
+                <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
+                    <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
+                </a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endmacro %} -->
+
+{% macro menu_dropdown_details(country,place=None,text_placeholder='',bg=None) %}
+<nav class="text-sm flex items-center max-w-fit gap-1 rounded-xl{%if bg%} {{bg}} py-1 px-2{%endif%}">
+    <div class="dropdown">
+        <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
+            {{text_placeholder}}
+            <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>
+        </div>
+        <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            <ul class="menu {%if place %}w-80{% else %}w-60{% endif %} p-2">
+                {% if place %}
+                    {% for m in list_months_slug %}
+                    <li class="group"><a class="font-medium" href="{{url_for('country_place_month',country=country,place=place,month=m)}}">
+                        <span class="">Weer in {{dict_destinations_clean[country][place]['Place']}} in </span><span class="font-semibold text-sky-500">{{list_months[loop.index-1]}}</span>
+                    </a></li>
+                    {% endfor %}
+                {% else %}
+                    {% for p in dict_countries[country]['list_place_slugs'] %}
+                    <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
+                        <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
+                    </a></li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endmacro %}
+
+<!-- Assumes dict_countries is available -->
+{% macro breadcrumbs_dropdown(country,place=None,month=None,bg=None) %}
+<nav class="text-sm flex items-center max-w-fit gap-1 rounded-xl{%if bg%} {{bg}} py-1 px-2{%endif%}">
+    <div class="dropdown">
+        <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
+            {{dict_countries[country]['country_name']}}
+            <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>
+        </div>
+        <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            <ul class="menu grid grid-cols-2 w-80 p-2">
+                {% if place %}
+                <li class="col-span-2"><a class="font-medium group" href="{{url_for('country',country=country)}}">
+                    <span class="text-sky-500 font-semibold group-hover:underline">
+                        Weer en klimaat in {{dict_countries[country]['country_name']}}
+                    </span>
+                </a></li>
+                <div class="col-span-2 divider -my-1 px-3 max-w-52"></div>
+                {% endif %}
+                {% for c in dict_countries %}
+                {% if place %}
+                {% if c!=country %}
+                <li><a class="font-medium group" href="{{url_for('country',country=c)}}">
+                    <span class="text-sky-500 font-semibold group-hover:underline">{{dict_countries[c]['country_name']}}</span>
+                </a></li>
+                {% endif %}
+                {% else %}
+                <li><a class="font-medium group" href="{{url_for('country',country=c)}}">
+                    <span class="text-sky-500 font-semibold group-hover:underline">
+                        {{dict_countries[c]['country_name']}}
+                    </span>
+                </a></li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% if month %}
+        {% endif %}
+    </div>
+
+    {% if place %}
+    <div class="dropdown">
+        <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
+            {{dict_destination['Place']}}
+            <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>    
+        </div>
+        <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            <div>
+            <ul class="menu w-60 p-2">
+                {% if month %}
+                <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=place)}}">
+                    <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[place]['Place']}}</span>
+                </a></li>
+                <div class="divider -my-1 px-3"></div>
+                {% endif %}
+                {% for p in dict_countries[country]['list_place_slugs'] %}
+                {% if month %}
+                    {% if p!= place%}
+                    <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
+                        <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
+                    </a></li>
+                    {% endif %}
+                {% else %}
+                <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
+                    <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
+                </a></li>
+                {% endif %}
+                
+                {% endfor %}
+            </ul>
+            </div>
+        </div>
+        {% if month %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+
+    {% if month %}
+    <div class="dropdown max-md:dropdown-end">
+        <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
+            {{dict_destination['month_name']}}
+            <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>    
+        </div>
+        <div tabindex="0" class="md:-ml-16 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            
+            <ul class="menu w-80 p-2">
+                {% for i in range(12) %}
+            <li><a class="font-medium" href="{{url_for('country_place_month',country=country,place=place,month=list_months_slug[i])}}">
+                Weer in {{dict_destination['Place']}} in <span class="font-semibold text-sky-500">{{list_months[i]}}</span>
+            </a></li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+
+</nav>
+{% endmacro %}
+
+<!-- Assumes dict_destinations_country is available -->
+{% macro breadcrumbs_menu(country,place=None,month=None,bg=None) %}
+<div tabindex="0" class="z-10 menu menu-horizontal rounded-full{%if bg%} {{bg}}{%endif%}">
+    <li>
+        <a class="hover:text-sky-500" href="{{url_for('home')}}">
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a href="">{{dict_destination['Country']}}</a>
+    </li>
+    {% if place %}
+    <li><a href="">{{dict_destination['Place']}}</a></li>
+    {% endif %}
+    {% if month %}
+    <li>
+        <details>
+            <summary>{{dict_destination['month_name']}}</summary>
+            <ul tabindex="0">
+                {% for i in range(12) %}
+                <li><a href="{{ url_for('country_place_month',country=country,place=place,month=list_months_slug[i]) }}">{{list_months[i]}}</a></li>
+                {% endfor %}
+            </ul>
+        </details>
+    </li>
+    <!-- <li><a href="">{{dict_destination['month_name']}}</a></li> -->
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+<!-- Assumes country, place and month_name is in dict_destination are known -->
+{% macro breadcrumbs_cpm(bg=None) %}
+<div class="flex grow-0">
+    <div class="breadcrumbs{%if bg%} px-4 rounded-lg {{bg}}{%endif%}">
+        <ul class="">
+            <li><a class="hover:text-sky-500" href="{{url_for('home')}}">
+                <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+            </a></li>
+            <li><a class="font-light hover:text-sky-500" href="{{url_for('country',country=country)}}">{{dict_destination['Country']}}</a></li>
+            <li><a class="font-light hover:text-sky-500" href="{{url_for('country_place',country=country,place=place)}}">{{dict_destination['Place']}}</a></li>
+            <li class="font-light font-semibold">{{dict_destination['month_name']}}</li>
+        </ul>
+    </div>
+</div>
+{% endmacro %}
+
+
+
+<!-- dict_anchors = {'anchor1':{'el':'h2','text':'Temperature in ...'},'anchor2':{...}} -->
+{% macro toc_anchors(dict_anchors,toc_title=None,bg=None) %}
+<nav class="not-prose py-4{%if bg%} {{bg}} rounded-lg px-4{%endif%}">
+    {%if toc_title%}
+    <h5 class="text-slate-900 font-semibold mb-4 text-sm leading-6">{{toc_title}}</h5>
+    {%endif%}
+    
+    <ul class="text-slate-700 text-sm leading-6">
+        {% for anchor in dict_anchors %}
+        {% if dict_anchors[anchor]['el'] == 'h2' %}
+        <li>
+            <a class="block py-1 font-medium hover:text-sky-500" href="#{{anchor}}">
+                {{dict_anchors[anchor]['text']}}
+            </a>
+        </li>
+        {% elif dict_anchors[anchor]['el'] == 'h3' %}
+        <li class="ml-4">
+            <a class="group flex items-start py-1 hover:text-sky-500" href="#{{anchor}}">
+                <svg width="3" height="24" viewBox="0 -9 3 24"
+                    class="mr-2 text-slate-400 overflow-visible group-hover:text-sky-500">
+                    <path d="M0 0L3 3L0 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                    </path>
+                </svg>
+                {{dict_anchors[anchor]['text']}}
+            </a>
+        </li>
+        {% elif dict_anchors[anchor]['el'] == 'h4' %}
+        <li class="ml-12">
+            <a class="group flex items-start py-1 hover:text-sky-500" href="#{{anchor}}">
+                <svg width="3" height="24" viewBox="0 -9 3 24"
+                    class="mr-2 text-slate-400 overflow-visible group-hover:text-sky-500">
+                    <path d="M0 0L3 3L0 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                    </path>
+                </svg>
+                {{dict_anchors[anchor]['text']}}
+            </a>
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</nav>
+{% endmacro %}
+
+<!-- Tiles: -->
+
+
+{% macro tile_stat(title,stat,chart=None,stat_col=None) %}
+<div {%if id%}id='{{id}}'{%endif%} class="bg-white flex flex-col drop-shadow-md rounded-3xl p-2 md:p-4 place-content-between col-span-1 row-span-1">
+    {% if chart %}<div id="{{chart}}">{{chart}}</div>{% endif %}
+    <div class="text-center">
+        <p class="text-gray-500 text-sm">{{title}}</p>
+        <p class="{%if stat_col%}{{stat_col}} {%endif%}text-2xl font-bold">{{stat|safe}}</p>
+    </div>
+    
+</div>
+{% endmacro %}
+
+{% macro tile_empty(title,txt,cs,rs,month=None,chart=None,id=None,disclaimer=None,anchor=None,slug_months=None) %}
+<div {%if id%}id='{{id}}'{%endif%} class="bg-white flex flex-col rounded-3xl p-6 md:p-8 place-content-between
+{% if cs==2%}col-span-2{%elif cs==3%}col-span-3{%else%}col-span-1{% endif %}
+{% if rs==2%}row-span-2{%elif rs==3%}row-span-3{%else%}row-span-1{% endif %}">
+    <div class="max-w-96 pl-4">
+        {%if title%}
+        <h3 {%if anchor%}id="#{{anchor}}" {%endif%}class="font-semibold text-lg xl:text-xl text-pretty">
+        
+            <!-- {%if country or place or month%}
+            <span class="text-sm xl:text-base text-sky-500">
+                {%if country%}{{country}}{%endif%}
+                {%if place%}{{place}} {%endif%}
+                {%if month%}{{month}}{%endif%}
+            </span>
+            <br>
+            {%endif%} -->
+            {% if title %}
+            <span>{{title|safe}}</span>
+            {%endif%}
+        </h3>
+        {%endif%}
+        {%if txt%}
+        <p class="font-light text-sm xl:text-base max-w-96">{{txt}}</p>
+        {%endif%}
+
+    </div>    
+
+    {% if chart %}
+    <div class="h-1/4 grow mt-2" id="{{chart}}"></div>
+    
+    {% endif %}
+    {% if disclaimer %}
+    <p class="pl-4 font-light text-gray-500 text-xs max-w-96 text-pretty">{{disclaimer}}
+    {% endif %}
+    {% if slug_months %}
+    <div class="mt-4 md:mt-8 mx-auto">
+        {{ menu_months(bg='bg-gray-100') }}
+    </div>
+    {% endif %}
+    
+</div>
+{% endmacro %}
+
+
+<!-- Tables: -->
+
+{% macro table_m_cp(df_m,cols=['tmin_med','tavg_med','tmax_med','prcp_sum'],text_rows=['Minimum (℃)','Gemiddelde (℃)','Maximum (℃)','Regen (mm)'],caption=None) %}
+<table>
+    {%if caption%}
+    <caption class="caption-bottom pt-2">
+        {{caption}}
+    </caption>
+    {%endif%}
+    <thead>
+        <tr>
+            <th class=""></th>
+            {% for i in range(12) %}
+            <th class="pb-2 text-xs md:text-sm text-center{%if i in [2,5,8]%} pr-3{%elif i==11%} pr-2{%endif%}">
+                {{list_months3[i]}}
+            </th>
+            {% endfor %}
+            
+        </tr>
+    </thead>
+    <tbody>
+        {% for text_row in text_rows %}
+        {% set outer_loop = loop %}
+        <tr class="group hover:bg-gray-100">
+            <td class="rounded-l-lg pl-2 pr-2 text-xs md:text-sm w-32">
+                {{text_row}}
+            </td>
+            {% for i in range(12) %}
+                {% set col=cols[outer_loop.index-1] %}
+                {% set col_m = df_m.query("m == "+(i+1)|string)[col].iloc[0] | round(0) | int %}
+                {% set ns = namespace(bg_col_pm='bg-white', found_match=False) %}
+                {% if col in ['tavg_med','tmin_med','tmax_med']%}
+                    {% for col_threshold, color_class in palette_temperatures.items() %}
+                        {% if col_m <= col_threshold and not ns.found_match %}
+                            {% set ns.bg_col_pm = color_class %}
+                            {% set ns.found_match = True %} 
+                        {% endif %}
+                    {% endfor %}
+                {% elif col == 'prcp_sum' %}
+                    {% for col_threshold, color_class in palette_precipitation.items() %}
+                        {% if col_m <= col_threshold and not ns.found_match %}
+                            {% set ns.bg_col_pm = color_class %}
+                            {% set ns.found_match = True %} 
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            <td class="{%if i==11%}rounded-r-lg{%endif%}">
+                <div class="{%if (outer_loop.index-1)%5==0 and outer_loop.index>1 %}mt-0 {%endif%}flex justify-center items-center {{ns.bg_col_pm}} m-auto w-8 h-8 rounded-full p-1 md:p-2{%if i in [2,5,8]%} mr-3{%elif i==11%} mr-2{%endif%}">
+                    <div class="col_val text-xs font-semibold text-center">
+                        {{col_m}}
+                    </div>
+                </div>
+                <!-- <a title="Weer en temperatuur voor {{dict_countries[country]['list_place_names'][outer_loop.index-1]}} in {{list_months[i]}}" href="{{url_for('country_place_month',country=country,place=p,month=list_months_slug[i])}}">
+                </a> -->
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+
+
+<!-- Assumes list_months3, dict_countries, country are available -->
+{% macro table_m_c(df_m_country,col='tavg_med',colname_place='Bestemming',caption=None) %}
+<!-- <div class=""> -->
+    <table id="table_{{col}}_m_c" class="sortable-table">
+        {%if caption%}
+        <caption class="caption-bottom pt-2">
+            {{caption}}
+        </caption>
+        {%endif%}
+        <thead>
+            <tr class="">
+                <th data-sort="desc" role="button" onclick="sortTable(n=0,col='{{col}}')" class="h-12 text-left pl-2 font-light text-xs md:text-sm text-green-500">
+                    {{colname_place}}<span id="col1_sort" class="text-xs pl-0.5">&#9650;</span>
+                </th>
+                {% for i in range(12) %}
+                <th role="button" onclick="sortTable(n={{i+1}},col='{{col}}')" class="text-xs md:text-sm text-center{%if i in [2,5,8]%} pr-3{%elif i==11%} pr-2{%endif%}">
+                    {{list_months3[i]}}<span id="col1_sort" class="text-xs pl-0.5"></span>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in dict_countries[country]['list_place_slugs'] %}
+            {% set outer_loop = loop %}
+            
+            <tr class="group hover:bg-gray-100">
+                <!-- <a href="{{ url_for('country_place',country=country,place=p) }}"> -->
+                <td class="rounded-l-lg pl-2 pr-2">
+                    <div class="{%if (outer_loop.index-1)%5==0 and outer_loop.index>1 %}mt-0 {%endif%}flex items-center">
+                        <!-- {{dict_countries[country]['list_place_names'][loop.index-1]}} -->
+                        <a class="text-sm md:text-base font-semibold underline group-hover:text-sky-500" href="{{url_for('country_place',country=country,place=p)}}">
+                            {{dict_countries[country]['list_place_names'][loop.index-1]}}
+                        </a>
+                    </div>
+                    
+                    
+                </td>
+                {% for i in range(12) %}
+                    {% set col_pm = df_m_country.query("place == '"~p~"' and m == "+(i+1)|string)[col].iloc[0] | round(0) | int %} 
+                    {% set ns = namespace(bg_col_pm='bg-white', found_match=False) %}
+                    {% if col in ['tavg_med','tmin_med','tmax_med']%}
+                        {% for col_threshold, color_class in palette_temperatures.items() %}
+                            {% if col_pm <= col_threshold and not ns.found_match %}
+                                {% set ns.bg_col_pm = color_class %}
+                                {% set ns.found_match = True %} 
+                            {% endif %}
+                        {% endfor %}
+                    {% elif col == 'prcp_sum' %}
+                        {% for col_threshold, color_class in palette_precipitation.items() %}
+                            {% if col_pm <= col_threshold and not ns.found_match %}
+                                {% set ns.bg_col_pm = color_class %}
+                                {% set ns.found_match = True %} 
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                <td class="{%if i==11%}rounded-r-lg{%endif%}">
+                    <div class="{%if (outer_loop.index-1)%5==0 and outer_loop.index>1 %}mt-0 {%endif%}flex justify-center items-center {{ns.bg_col_pm}} m-auto w-8 h-8 rounded-full p-1 md:p-2{%if i in [2,5,8]%} mr-3{%elif i==11%} mr-2{%endif%}">
+                        <div class="col_val text-xs font-semibold text-center">
+                            {{col_pm}}
+                        </div>
+                    </div>
+                    <!-- <a title="Weer en temperatuur voor {{dict_countries[country]['list_place_names'][outer_loop.index-1]}} in {{list_months[i]}}" href="{{url_for('country_place_month',country=country,place=p,month=list_months_slug[i])}}">
+                    </a> -->
+                </td>
+            <!-- </a> -->
+                {% endfor %}
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+<!-- </div> -->
+{% endmacro %}
+
+
+<!-- Maps: -->
+
+
+{% macro play_pause(id=None) %}
+<label {%if id%}id="{{id}}"{%endif%} class="btn btn-sm btn-circle btn-primary swap swap-rotate">
+    <input type="checkbox" />
+    <svg class="swap-off fill-current fill-white h-12 w-12 p-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M21.4086 9.35258C23.5305 10.5065 23.5305 13.4935 21.4086 14.6474L8.59662 21.6145C6.53435 22.736 4 21.2763 4 18.9671L4 5.0329C4 2.72368 6.53435 1.26402 8.59661 2.38548L21.4086 9.35258Z" fill="#1C274C"></path> </g></svg>
+    <svg class="swap-on fill-current h-12 w-12 p-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 6C2 4.11438 2 3.17157 2.58579 2.58579C3.17157 2 4.11438 2 6 2C7.88562 2 8.82843 2 9.41421 2.58579C10 3.17157 10 4.11438 10 6V18C10 19.8856 10 20.8284 9.41421 21.4142C8.82843 22 7.88562 22 6 22C4.11438 22 3.17157 22 2.58579 21.4142C2 20.8284 2 19.8856 2 18V6Z" fill="#1C274C"></path> <path d="M14 6C14 4.11438 14 3.17157 14.5858 2.58579C15.1716 2 16.1144 2 18 2C19.8856 2 20.8284 2 21.4142 2.58579C22 3.17157 22 4.11438 22 6V18C22 19.8856 22 20.8284 21.4142 21.4142C20.8284 22 19.8856 22 18 22C16.1144 22 15.1716 22 14.5858 21.4142C14 20.8284 14 19.8856 14 18V6Z" fill="#1C274C"></path> </g></svg>
+</label>
+{% endmacro %}
+
+
+{% macro map_country(col) %}
+<div class="relative">
+    <!-- <div class="flex justify-end">
+        <div class="flex gap-2 items-center px-2">
+            <p id="text_{{col}}" class="font-semibold text-lg"></p>
+            {{ play_pause(id='button_'+col) }}
+        </div>
+    </div> -->
+    <div class="not-prose absolute flex top-2 gap-2 items-center px-3 py-2 {%if country in ['portugal'] %}flex-row-reverse {% else %}right-2{% endif %}">
+        <p id="text_{{col}}" class="prose font-semibold text-lg"></p>
+        {{ play_pause(id='button_'+col) }}
+    </div>
+    <div class="flex {% if country in ['portugal'] %}flex-row-reverse{%else%}flex-col{% endif %}">
+        <div id="map_{{col}}" class="grow"></div>
+        {% if country in ['spanje'] %}
+        <div id="map_{{col}}_2" class="border-2 mt-2 p-2 w-1/2"></div>
+        {% endif %}
+        {% if country in ['portugal'] %}
+        <div class="w-1/4 my-auto">
+            <div id="map_{{col}}_2" class="mt-12 mb-4 border-2"></div>
+            <div id="map_{{col}}_3" class="w-3/4 p-2 border-2"></div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endmacro %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros with context %}
+{% block content %}
+
+<div class="bg-base-200 p-10">
+    {{dict_config}}
+
+    If you don't see a grey background, then you have forgotten to run `npm run build-css`
+</div>
+<div class="p-4 prose">
+    {% for c in dict_countries %}
+    <h2>{{dict_countries[c]['country_name']}}</h2>
+        <ul>
+        {% for p in dict_countries[c]['list_place_slugs'] %}
+            <li><a href="{{ url_for('country_place',country=c,place=p) }}">
+                {{p}}
+            </a></li>
+        {% endfor %}
+        </ul>
+    {% endfor %}
+</div>
+<div class="p-4 bg-green-50">
+    {{dict_countries}}
+</div>
+
+{% endblock content %}

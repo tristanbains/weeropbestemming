@@ -1,0 +1,23 @@
+cookiecutter
+cookiecutter-data-science
+transformers
+polars
+ephem
+holidays
+meteostat
+emoji
+flask==3.0.3
+Flask-FlatPages==0.8.2
+Flask-Minify==0.42
+frozen-flask==1.0.2
+Markdown==3.6
+MarkupSafe==2.1.5
+geopy
+# osgeo
+# wheel
+# setuptools>=67
+# gdal[numpy]=="$(gdal-config --version).*" --no-build-isolation
+# gdal
+# rasterio
+geopandas
+shapely

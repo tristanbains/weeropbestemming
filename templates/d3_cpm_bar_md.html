@@ -1,0 +1,187 @@
+<script>
+    
+    function create_cpm_bar_md(data, targetElementId) {
+        const margin = { top: 20, right: 40, bottom: 30, left: 40 };
+        let width = 400 - margin.left - margin.right; 
+        const height = 200 - margin.top - margin.bottom;
+        const svg = d3.select(`#${targetElementId}`).append("svg")
+            .attr("width","100%")
+            .attr("height","100%")
+            .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+            .attr("preserveAspectRatio", "xMinYMid meet") 
+            .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // Create scales
+        const x = d3.scaleBand()
+            .range([0, width])
+            .domain(data.map(d => d.d))
+            .padding(0.2);
+
+        const ymin = (Math.floor((d3.min(data, d => d.tmin_avg))/5)*5)-1;
+        const ymax = (Math.ceil((d3.max(data, d => d.tmax_avg))/5)*5)+1;
+        const y = d3.scaleLinear()
+            .domain([ymin,ymax])
+            .range([height, 0]);
+
+        // Add horizontal lines for multiples of 5
+        svg.selectAll(".horizLine")
+            .data(y.ticks(Math.ceil((y.domain()[1] - y.domain()[0]) / 5)))
+            .enter()
+            .append("line")
+                .attr("class", "horizLine")
+                .attr("x1", 0)
+                .attr("y1", d => y(d))
+                .attr("x2", width)
+                .attr("y2", d => y(d))
+                .classed('stroke-gray-300',true)
+                .style("stroke-width", 0.5);
+
+        svg.selectAll(".vertLine")
+            .data(x.domain()) 
+            .enter() 
+            .append("line")
+                .attr("class", "vertLine")
+                .attr("x1", d => x(d) + x.bandwidth() / 2) 
+                .attr("y2", height)
+                .attr("x2", d => x(d) + x.bandwidth() / 2) 
+                .attr("y1", 0)
+                .classed('stroke-gray-100',true)
+                .style("stroke-width", d => parseInt(d) % 5 === 0 ? 1 : 0);
+                
+        // Create and append rectangles
+        const bars = svg.selectAll(".bar")
+            .data(data)
+            .enter()
+            .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(d.d))
+                .attr("y", d => y(d.tmax_avg))
+                .attr("width", x.bandwidth())
+                .attr("height", d => Math.abs(y(d.tmax_avg)-y(d.tmin_avg)))
+                .attr("rx", 3)
+                .attr("ry", 3)
+                .classed('hover:fill-yellow-600',true)
+                .classed('fill-yellow-400',true);
+
+        // Add x-axis
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x)
+                .tickValues(x.domain().filter(d => parseInt(d) % 5 === 0))
+                .tickFormat(d => `${d} ${data.find(item => item.d === d).m_abbr}`)
+            )
+            .call(g => g.select(".domain").remove())
+            .call(g => g.selectAll("line").remove());
+
+        // Add y-axis
+        svg.append("g")
+            .call(d3.axisLeft(y).tickFormat(d => `${d}℃`) // Ensure correct tick formatting
+            .ticks(Math.ceil((y.domain()[1] - y.domain()[0]) / 5)))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.selectAll("line").remove());
+        
+        const tickFontSize = parseFloat(svg.select(".tick text").style("font-size"));
+
+        // Calculate average tmin_avg
+        const avgTminAvg = d3.mean(data, d => d.tavg_avg);
+        const roundedAvg = parseFloat(avgTminAvg.toFixed(1));
+        svg.append("line")
+            .attr("x1", 0)
+            .attr("y1", y(roundedAvg))
+            .attr("x2", width)
+            .attr("y2", y(roundedAvg))
+            .classed('stroke-2 md:stroke-1 stroke-yellow-600',true);
+        
+        svg.append("text")
+            .attr("x", width+3) // Adjust x position for text
+            .attr("y", y(roundedAvg)+3)
+            .attr("text-anchor", "start") 
+            // .style("font-size",`${tickFontSize}px`)
+            .classed('font-bold fill-yellow-600 text-xs md:text-[10px]',true)
+            .text(`${roundedAvg}℃`);
+    
+        // console.log( d3.max(data, d => d.tmax_avg));
+        tmax = d3.max(data, d => d.tmax_avg);
+        tmin = d3.min(data, d => d.tmin_avg);
+        svg.append("line")
+            .attr("x1", 0)
+            .attr("y1", y(tmax))
+            .attr("x2", width)
+            .attr("y2", y(tmax))
+            // .style("stroke-width", 0.5)
+            .classed('stroke-1 md:stroke-[0.5] stroke-yellow-600',true);
+        
+        svg.append("line")
+            .attr("x1", 0)
+            .attr("y1", y(tmin))
+            .attr("x2", width)
+            .attr("y2", y(tmin))
+            // .style("stroke-width", 0.5)
+            .classed('stroke-1 md:stroke-[0.5] stroke-yellow-600',true);
+        
+        svg.append("text")
+            .attr("x", width+3) // Adjust x position for text
+            .attr("y", y(tmax)+3)
+            .attr("text-anchor", "start")
+            .classed('fill-yellow-600 text-xs md:text-[10px]',true)
+            .text(`${tmax}℃`);
+
+        svg.append("text")
+            .attr("x", width+3) // Adjust x position for text
+            .attr("y", y(tmin)+3)
+            .attr("text-anchor", "start") 
+            .classed('fill-yellow-600 text-xs md:text-[10px]',true)
+            .text(`${tmin}℃`);
+        
+        // Add max and min labels with initial opacity 0
+        data.forEach((d, i) => {
+            svg.append("text")
+            .attr("class", `bar_md_temp_maxLabel_${d.d}`) 
+            .attr("x", x(d.d) + x.bandwidth() / 2) 
+            .attr("y", y(d.tmax_avg+1)) 
+            .attr("text-anchor", "middle") 
+            // .style("font-size", `${tickFontSize}px`) 
+            .classed('font-bold text-base md:text-xs xl:text-[10px]',true)
+            .style("opacity", 0) 
+            .text(`${d.tmax_avg}℃`);
+
+            svg.append("text")
+            .attr("class", `bar_md_temp_minLabel_${d.d}`) 
+            .attr("x", x(d.d) + x.bandwidth() / 2) 
+            .attr("y", y(d.tmin_avg-2)) 
+            .attr("text-anchor", "middle") 
+            // .style("font-size", `${tickFontSize}px`) 
+            .classed('font-bold text-base md:text-xs xl:text-[10px]',true)
+            .style("background-color", "white") 
+            .style("padding", "2px") 
+            .style("border-radius", "3px") 
+            .style("opacity", 0) 
+            .text(`${d.tmin_avg}℃`);
+        });
+
+        // Add mouseover and mouseout events to the bars
+        bars
+            .on("mouseover", function(event, d, i) { 
+            d3.select(`.bar_md_temp_maxLabel_${d.d}`).style("opacity", 1);
+            d3.select(`.bar_md_temp_minLabel_${d.d}`).style("opacity", 1);
+            // d3.select(`.bar_md_temp_maxLabel`).style("opacity", 0); 
+            // d3.select(`.bar_md_temp_minLabel`).style("opacity", 0); 
+            // boolean_bar_md_temp = true;
+            })
+            .on("mouseout", function(event, d, i) { 
+                d3.select(`.bar_md_temp_maxLabel_${d.d}`).style("opacity", 0);
+                d3.select(`.bar_md_temp_minLabel_${d.d}`).style("opacity", 0);
+                // boolean_bar_md_temp = false;
+                // setTimeout(()=>{
+                //     if(!boolean_bar_md_temp){
+                //         d3.select(`.bar_md_temp_maxLabel`).style("opacity", 1); 
+                //         d3.select(`.bar_md_temp_minLabel`).style("opacity", 1); 
+                //         boolean_bar_md_temp = false;
+                //     }
+                    
+                // },1000);
+            });
+    }
+
+</script>

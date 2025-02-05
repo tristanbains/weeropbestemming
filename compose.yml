@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    volumes:
+      - ./:/app
+    entrypoint: python app.py
+    ports:
+      - "5777:5777"
+  jupyter:
+    build: .
+    volumes:
+      - ./:/app
+    entrypoint: jupyter notebook --ip=0.0.0.0 --port=8777 --no-browser --allow-root --NotebookApp.token=''
+    ports:
+      - "8777:8777"
+
+# version: "3.9"
+
+# services:
+#   web:
+#     build: .
+#     command: python app.py
+#     ports:
+#       - "5777:5777"
+#   jupyter:
+#     build: .
+#     command: jupyter notebook --ip=0.0.0.0 --port=8777 --no-browser --allow-root --NotebookApp.token=''
+#     ports:
+#       - "8777:8777"
+
+
+# services:
+#   web:
+#     # build: .
+#     image: flask_jupyter_tailwind_daisy
+#     # command: python app.py runserver 0.0.0.0:5000
+#     volumes:
+#       - .:/app
+#     ports:
+#       - "5777:5000"
+#     entrypoint: python app.py
+  
+#   # tailwind:
+#   #   # image: docker_flask_tailwindcss_daisyui-web:latest
+#   #   image: node:18-alpine
+#   #   volumes:
+#   #     - .:/app
+#   #   depends_on:
+#   #     - web
+#   #   # restart: "no"
+#   #   working_dir: /app
+#   #   entrypoint: npm run build-css
+
+
+#   jupyter:
+#     # env_file:
+#     #   - .env
+#     # build:
+#     #   context: .
+#     #   dockerfile: Dockerfile
+#     image: flask_jupyter_tailwind_daisy
+#     ports:
+#       - "8777:8888"
+#     volumes:
+#       - ./notebooks:/app
+#     entrypoint: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+
+
