@@ -54,7 +54,7 @@ dict_base_url = {
 }
 
 dict_google_analytics_id = {
-   'NL':'G-JM9SCXK4CZ'
+   'NL':'G-NWJXGZ39C5'
 }
 
 dict_logo_parts = {
@@ -76,6 +76,7 @@ google_analytics_id = dict_google_analytics_id[lang]
 
 
 from python_code.download import *
+from python_code.pseo import *
 
 df_destinations = xlsx_sheet_to_df(filename=r'./data/destinations.xlsx',sheetname='Destinations')
 dict_destinations = create_dict_destinations(df_destinations)
@@ -489,8 +490,10 @@ if __name__ =='__main__':
 
         freezer.freeze()
         
-        # create_sitemap_xml(dict_website)
-        # create_robots_txt(dict_website)
+        folder_build = app.config['FREEZER_DESTINATION']
+        create_sitemap_xml(base_url=base_url,folder_build=folder_build)
+        create_robots_txt(base_url=base_url,folder_build=folder_build)
+        
     else:
         # app.run(port=5000)
         app.run(host='0.0.0.0',debug=True,port=port)
