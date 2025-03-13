@@ -53,6 +53,10 @@ dict_base_url = {
    'NL':'https://www.weeropbestemming.nl',
 }
 
+dict_google_analytics_id = {
+   'NL':'G-JM9SCXK4CZ'
+}
+
 dict_logo_parts = {
    'NL':{
       'part1':{'txt':'Weer','classes':'first'},
@@ -63,6 +67,8 @@ dict_logo_parts = {
 }
 
 base_url = dict_base_url[lang]
+google_analytics_id = dict_google_analytics_id[lang]
+
 
 # -------
 # ------- LOAD DATA ------------- 
@@ -147,6 +153,7 @@ list_months3 = df_months[lang+'3'].to_list()
 def dict_all():
     return dict(
        base_url = base_url,
+       google_analytics_id = google_analytics_id,
        dict_logo = dict_logo_parts[lang],
        dict_config = dict_config,
        dict_destinations = dict_destinations,
