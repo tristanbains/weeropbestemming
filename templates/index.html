@@ -1,26 +1,119 @@
 {% extends "base.html" %}
 {% import "macros.html" as macros with context %}
 {% block content %}
+<script src="https://d3js.org/d3.v7.js"></script>
+<script src="https://d3js.org/topojson.v3.min.js"></script> 
 
-<div class="bg-base-200 p-10">
-    {{dict_config}}
+{{ macros.top() }}
 
-    If you don't see a grey background, then you have forgotten to run `npm run build-css`
+<!-- Div intro -->
+<div class="">
+    <div class="px-2 md:px-8 flex flex-col gap-4 pt-8 max-w-screen-md mx-auto w-full sm:w-5/6 md:w-full ">
+        <div class="prose">
+            <h2>{{ dict_ID['h2_popular'] }}</h2>
+        </div>
+        {{ macros.div_tabs(name='tabs_1',bg_checked='bg-gray-100') }}
+        <div class="prose">
+            <h2>{{ dict_ID['h2_maps'] }}</h2>
+            <p>{{ dict_ID['p_maps_1'] }}</p>
+        </div>
+        
+    </div>
 </div>
-<div class="p-4 prose">
-    {% for c in dict_countries %}
-    <h2>{{dict_countries[c]['country_name']}}</h2>
-        <ul>
-        {% for p in dict_countries[c]['list_place_slugs'] %}
-            <li><a href="{{ url_for('country_place',country=c,place=p) }}">
-                {{p}}
-            </a></li>
+{{ macros.script_tabs(name='tabs_1',bg_checked='bg-gray-100') }}
+
+
+<!-- Div maps -->
+<div class="px-2 md:px-8 flex flex-col gap-4 max-w-screen-md mx-auto pt-8">
+    <div class="w-full sm:w-3/4 md:w-full mx-auto">
+        {% for ct in countries_home %}
+            {% set ns = namespace(threshold_popular_ct=6, counter_popular_ct=0) %}
+            {% set first_destination = dict_destinations_data[ct] | dictsort | first | first %}
+            {% set Country = dict_destinations_data[ct][first_destination]['Country'] %}
+            {% set n_popular_ct = dict_countrydata[ct]['n_popular_ct'] %}
+            
+            {% if not loop.first %}
+            <div class="divider py-4"></div>
+            {% endif %}
+            <div class="md:flex gap-4">
+                <div class="relative w-full md:w-8/12 {%if loop.index%2==0 %}md:order-2{%endif%}">
+                    <div id="map_{{ct}}"></div>
+                    <div class="absolute top-4 {%if loop.index%2==0 %}right-4{%else%}left-4{%endif%}">
+                        <div class="px-4 py-2 rounded-lg bg-gray-700 text-white text-lg">
+                            <p class="leading-5">
+                                {{dict_countrydata[ct]['Country']}}
+                                <br>
+                                <span class="text-sm text-gray-200 -pt-2" id="map_{{ct}}_month"></span>
+                            </p>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="py-4 w-full md:w-4/12 {%if loop.index%2==0 %}md:order-1{%endif%}">
+                    <div class="flex flex-col">
+                        <h3 class="footer-title text-base">{{Country}}</h3>
+                        <p class="font-light">{{n_popular_ct}} {{dict_ID['map_popular']}}</p>
+                        <div class="pt-4 grid {% if n_popular_ct > ns.threshold_popular_ct %}grid-cols-2{%else%}{%endif%}">
+                            <div class="flex flex-col">
+                            {% for p in dict_destinations_data[ct] %}
+                                {% set ddd_p = dict_destinations_data[ct][p] %}
+                                {% if dict_destinations_data[ct][p]['Popular'] ==1 %}
+                                    {% set ns.counter_popular_ct = ns.counter_popular_ct + 1 %}
+                                    {% set boolean_popular = True %}
+                                    <a href="{{ url_for('country_place',country=ct,place=p) }}" class="link link-hover text-sky-500">
+                                        {{ ddd_p['Place'] }}
+                                    </a>
+                                {% endif %}
+                                {% if (ns.counter_popular_ct == (n_popular_ct/2) | round(0,'ceil') |int) and boolean_popular %}
+                                </div><div class="flex flex-col">
+                                {% endif %}
+                                {% set boolean_popular = False %}
+                            {% endfor %}
+                            </div>
+                        </div>
+                        <div class="max-w-72 mt-4">
+                            <a href="{{ url_for('country',country=ct) }}" class="link link-hover text-sky-500 text-sm">
+                                {{ dict_ID['map_details_1'] }} {{dict_countries[ct]['n_places']}} {{ dict_ID['map_details_2'] }} {{Country}} {{ dict_ID['map_details_3'] }}
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
         {% endfor %}
-        </ul>
+    </div>
+</div>
+
+
+<!-- Div outro -->
+<div class="bg-gray-100s pb-8">
+    <div class="px-2 md:px-8 flex flex-col gap-4 pt-8 max-w-screen-md mx-auto w-full sm:w-5/6 md:w-full ">
+        {{ macros.div_tabs(name='tabs_2',bg_checked='bg-gray-100') }}
+    </div>
+</div>
+{{ macros.script_tabs(name='tabs_2',bg_checked='bg-gray-100') }}
+
+
+{% include "d3_c_map.html"%}
+
+<script>
+    const futureMonth = new Date(new Date().setDate(new Date().getDate() + 21)).getMonth() + 1;
+    var list_months = {{ list_months|safe }};
+    const futureMonth_name = list_months[futureMonth-1];
+    const allTopojsonData = loadAllTopojson();
+    {% for topo in dict_topojson %}
+        {% set ct = topo.split('_')[0].replace('.json','') %}
+        allTopojsonData.then(data => {
+            var countryTopo = data['{{topo}}'].topo;
+            var targetElementId = 'map_'+'{{ct}}';
+            var dataMap = {{dict_mapdata[ct]|tojson}};
+            var month_sort = futureMonth;
+            let map1_w = 400;
+            let map1_h = 400;
+            create_c_map(topojsonData=countryTopo, data_map=dataMap, targetElementId=targetElementId,w=map1_w,h=map1_h,col='tmax_med',mapId=1,palette=palette_temperatures,month_start=month_sort,place_name='',factor_text=40);
+            document.getElementById("map_{{ ct }}_month").textContent = futureMonth_name;
+        });
     {% endfor %}
-</div>
-<div class="p-4 bg-green-50">
-    {{dict_countries}}
-</div>
+</script>
 
 {% endblock content %}

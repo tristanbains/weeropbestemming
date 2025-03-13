@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros with context %}
+{% block content %}
+
+{{ macros.top() }}
+
+<div class="mx-auto max-w-screen-md px-4 pt-6">
+    <div class="prose">
+        <h1>Sitemap</h1>
+    </div>
+    
+    <div>
+        {% for c in dict_countries %}
+            {% set n_cp = dict_countries[c]['n_places'] %}
+            {% set n_cp_third = (n_cp/3) | round(0,'ceil') | int %}
+            {% set n_cp_threshold = 10 %}
+            {% set boolean_second = True %}
+            {% set boolean_third = False %}
+            
+            {% if (loop.index-1)%5==0%}
+                {{ macros.sitemap_anchors() }}
+            {% endif %}
+
+            {% if (loop.index-1)%5>0%}
+            <div class="divider w-2/3"></div>
+            {% endif %}
+            
+            <h2 id="{{c}}" class="text-lg uppercase font-bold pb-2 {% if ((loop.index-1)%5==0) %}pt-6{% else %}pt-0{%endif%}">
+                <a class="link link-hover text-sky-500" href="{{ url_for('country',country=c) }}">{{ dict_countries[c]['country_name'] }}</a>
+                 <span class="pl-2 text-gray-500">({{n_cp}} {{dict_ID['span_destinations']}})</span>
+            </h2>
+            <div class="grid grid-cols-3">
+                <div class="flex flex-col">
+                    {% for p in dict_countries[c]['list_place_slugs'] %}
+                        {% if boolean_second and (loop.index-1)%n_cp_third==0 and not loop.first %}
+                        </div><div class="flex flex-col">
+                        {% elif boolean_third and (loop.index-1)%n_cp_third==0 and not loop.first%}
+                        </div><div class="flex flex-col">
+                        {% endif %}
+                        <a class="link link-hover text-sky-500" href="{{ url_for('country_place',country=c,place=p)}}">{{dict_countries[c]['list_place_names'][loop.index-1]}}</a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if loop.last and (loop.index-1)%5>1%}
+                {{ macros.sitemap_anchors() }}
+            {% endif %}
+            
+
+            
+        {% endfor %}
+    </div>
+    
+</div>
+
+{% endblock content %}
+

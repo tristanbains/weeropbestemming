@@ -1,9 +1,16 @@
+{% import "macros.html" as macros with context %}
 <!DOCTYPE html>
 
 <html lang="{{dict_config['lang']}}" data-theme="{{dict_config['daisyui_theme']}}" style="scroll-behavior: smooth;"> 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{url_for('static',filename='images/favicon/favicon-96x96.png')}}" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="{{url_for('static',filename='images/favicon/favicon.svg')}}" />
+    <link rel="shortcut icon" href="{{url_for('static',filename='images/favicon/favicon.ico')}}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{{url_for('static',filename='images/favicon/apple-touch-icon.png')}}" />
+    <link rel="manifest" href="{{url_for('static',filename='images/favicon/site.webmanifest')}}" />
+    
     <title>
         {% if page %}
             {% if page.title %}
@@ -16,6 +23,28 @@
         {% endif %}
     </title>
 
+    {% if dict_page_meta %}
+        {% if dict_page_meta['description'] %}
+        <meta name="description" content="{{dict_page_meta['description']}}">
+        {% endif %}
+    {% endif %}
+
+    {% if dict_page_meta %}
+        {% if dict_page_meta['canonical'] %}
+        <link rel="canonical" href="{{dict_page_meta['canonical']}}">
+        {% endif %}
+    {% endif %}
+    {% if request.endpoint not in ['home'] %}
+    {{ macros.snippet_json_breadcrumbs() }}
+    {% endif %}
+    {% if request.endpoint == 'country' %}
+    {{ macros.snippet_json_FAQ(dict_QA=dictQA_country,
+        list_keys=[
+        'month_warmest','month_coldest','where_warmest','where_coldest',
+        'where_max_always_20','where_max_always_25','where_max_always_30',
+        'when_med_around_20','when_med_around_25','when_med_around_30']) }}
+    {% endif %}
+    
     <link rel="stylesheet" href="{{url_for('static',filename='css/output.css')}}">
 </head>
 {% set palette_temperatures = {
@@ -56,5 +85,7 @@
         <!-- <p>Default content to be displayed</p> -->
         {% endblock content %}
     </div>
+    {{ macros.footer() }}
+
 </body>
 </html>

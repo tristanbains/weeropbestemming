@@ -2,58 +2,127 @@
 {% import "macros.html" as macros with context %}
 {% block content %}
 <script src="https://d3js.org/d3.v7.js"></script>
-<div class="mx-auto md:max-w-screen-md px-2 flex flex-col gap-4 pt-8">
-    <div class="flex gap-4">
-        {{ macros.breadcrumbs_dropdown(country=country,place=place,bg='bg-gray-100') }}
-        {{ macros.menu_dropdown_details(country=country,place=place,text_placeholder='Weer per maand voor '+dict_destination['Place'],bg='bg-gray-100') }}
+
+{{ macros.top() }}
+
+<div class="w-full sticky top-0 bg-white z-10">
+    <div class="prose mx-auto">
+        <div class="not-prose px-2 flex py-4 gap-4">
+            {{ macros.breadcrumbs_dropdown(country=country,place=place,bg='bg-gray-100') }}
+            {{ macros.menu_dropdown_details(country=country,place=place,text_placeholder='Weer per maand voor '+dict_destination['Place'],bg='bg-gray-100') }}
+        </div>
     </div>
+</div>
+
+<div class="mx-auto px-2 flex flex-col gap-4 pt-8">
     
-    <!-- {{macros.menu_months_all(bg=None)}} -->
-    <div class="prose text-pretty px-2">
+    <div class="prose mx-auto text-pretty px-2">
+
         <header>
-            <h1>Het weer en klimaat in {{dict_destination['Place']}}</h1>
+            <h1>
+                {{ dict_ID['h1'] }}
+            </h1>
         </header>
+        {{ macros.breadcrumbs_cp() }}
+        {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+        <div class="pt-4">
+            {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
+        </div>
         <article>
-            <p>X Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam felis orci per, metus erat class eu platea cras. Efficitur facilisi parturient; enim dis et turpis. Vitae congue ex dictumst tincidunt luctus nibh volutpat nibh. Molestie risus arcu, ultrices non et aliquam. Ornare maximus diam habitasse platea tempor.</p>
-            <h2>Temperatuur in {{dict_destination['Place']}}</h2>
+            <h2 id="h2_overview">{{dict_ID['h2_overview']}}</h2>
             <section>
+                <div class="gap-4 not-prose">
+                    {{macros.table_m_cp(df_m,cols=['tmax_med','tavg_med','tmin_med'],text_rows=['Maximum ℃','Gemiddelde ℃','Minimum ℃'])}}
+                    
+                </div>
+                <div class="not-prose pt-4">
+                    {{macros.table_m_cp(df_m,cols=['prcp_sum'],text_rows=['Regen (mm)'])}}
+                </div>
+                <div class="pt-4">
+                    {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+                    {{ macros.link_cp_c() }}
+                </div>
+                
+            </section>
+            
+            <h2 id="h2_temp">
+                {{ dict_ID['h2_temp'] }}
+            </h2>
+            <section>
+                <h3 id="h3_temp_avg">{{ dict_ID['h3_temp_avg'] }}</h3>
                 {{
                     macros.tile_empty(
-                        title='<span class="text-yellow-500">Gemiddelde temperatuur</span> in '+dict_destination['Place']+' over het jaar',
+                        title='',
                         cs=3,rs=3,
-                        disclaimer="X Grafiek laat minimum, maximum en gemiddelde temperatuur per maand in "+dict_destination['Place']+" zien, berekend over recente jaren",
+                        disclaimer=dict_ID['disclaimer_temp_avg'],
                         
                         slug_months=False,
                         chart='m3_temp_area'
                         )
                 }}
+                {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+                {{ macros.link_cp_c() }}
             </section>
-        </article>
-        
-        <!-- <p>{{dict_destination}}</p> -->
-        
-        <!-- <p> Justo tincidunt turpis facilisis, faucibus egestas luctus tellus lectus. Tellus cursus orci.</p> -->
-    </div>
-    <div class="gap-4">
-        {{macros.table_m_cp(df_m,cols=['tmax_med','tavg_med','tmin_med'],text_rows=['Maximum ℃','Gemiddelde ℃','Minimum ℃'])}}
-        {{macros.table_m_cp(df_m,cols=['prcp_sum'],text_rows=['Regen (mm)'])}}
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <h2 id="h2_rain">
+                {{ dict_ID['h2_rain'] }}
+            </h2>
+            <section>
+                <h3 id="h3_rain_sum">{{dict_ID['h3_rain_sum']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_rain_sum'],
+                        slug_months=False,
+                        chart='m_rain_sum_bar'
+                        )
+                }}
+                <h3 id="h3_prcp_sum">{{dict_ID['h3_prcp_sum']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_prcp_sum'],
+                        slug_months=False,
+                        chart='m_prcp_sum_bar'
+                        )
+                }}
+                <h3 id="h3_rain_pct">{{dict_ID['h3_rain_pct']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_rain_pct'],
+                        slug_months=False,
+                        chart='m_rain_pct_bar'
+                        )
+                }}
+                {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+                {{ macros.link_cp_c() }}
+                
+            </section>
 
-    </div>
-    <div class="prose text-pretty px-2">
-        
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="pt-10">
+                {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
+            </div>
+
+        </article>
         
     </div>
 </div>
 
 
 {% include "d3_cp_area_m3.html"%}
+{% include "d3_cpm_bar_md_rain.html"%}
 
 <script>
     const data_mm3 = {{json_mm3|tojson}};
+    const data_m = {{json_m|tojson}};
+
     create_cp_area_m3(data_mm3, "m3_temp_area");
+
+    create_cpm_bar_md_rain(data_m, "m_rain_pct_bar",'rain_pct','m');
+    create_cpm_bar_md_rain(data_m, "m_rain_sum_bar",'rain_sum','m');
+    create_cpm_bar_md_rain(data_m, "m_prcp_sum_bar",'prcp_sum','m');
 </script>
 {% endblock content%}

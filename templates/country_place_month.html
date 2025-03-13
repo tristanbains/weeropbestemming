@@ -3,100 +3,136 @@
 {% block content %}
 <script src="https://d3js.org/d3.v7.js"></script>
 
+{{ macros.top() }}
 
-<div>
+<div class="w-full sticky top-0 bg-white z-10">
+    <div class="prose mx-auto">
+        <div class="not-prose px-2 flex py-4 gap-4">
+            {{ macros.breadcrumbs_dropdown(country=country,place=place,month=month,bg='bg-gray-100') }}
+        </div>
+    </div>
+</div>
+
+<div class="mx-auto px-2 flex flex-col gap-4 pt-8">
     
-    <!-- <div>Header</div> -->
-    
-    <!-- <div class="p-4 bg-green-50">{{json_mm3}}</div> -->
-
-    <div class="mx-auto max-w-md md:max-w-screen-md px-2 flex flex-col gap-4 pt-8">
+    <div class="prose mx-auto text-pretty px-2">
         
-        {{ macros.breadcrumbs_dropdown(country=country,place=place,month=month,bg='bg-gray-100') }}
-        <div class="prose text-pretty px-2">
-                <h1>Het weer in {{dict_destination['Place']}} in {{dict_destination['month_name']}}</h1>
-                <p>Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam felis orci per, metus erat class eu platea cras. Efficitur facilisi parturient; enim dis et turpis. Vitae congue ex dictumst tincidunt luctus nibh volutpat nibh. Molestie risus arcu, ultrices non et aliquam. Ornare maximus diam habitasse platea tempor.</p>
-                <!-- <p>{{dict_destination}}</p> -->
-                
-                <!-- <p> Justo tincidunt turpis facilisis, faucibus egestas luctus tellus lectus. Tellus cursus orci.</p> -->
-        </div>
+        <header>
+            <h1>
+                {{ dict_ID['h1'] }}
+            </h1>
+        </header>
+        {{ macros.breadcrumbs_cp() }}
 
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <!-- {{macros.tile_stat(title="Gemiddelde temperatuur",stat='230℃',chart='bar3, df_m',stat_col='text-yellow-600')}}
-            {{macros.tile_stat(title="Minimum en maximum temperatuur",stat='23℃ <span class="text-sm text-gray-500">tot</span> -25℃',chart='bar3, df_m',stat_col='text-yellow-600')}}
-            {{macros.tile_stat(title="Dagen met regen",stat='-3',chart='bar3',stat_col='text-blue-700')}}
-            {{macros.tile_stat(title="Regen per maand",stat='-3mm',chart='bar3',stat_col='text-blue-700')}} -->
-        </div>
+        {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+        
 
-        <div class="prose text-pretty px-2">
-            <h2>Temperatuur in {{dict_destination['Place']}} in {{dict_destination['month_name']}}</h2>
+
+        <div class="pt-4">
+            {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
         </div>
         
-        <div class="grid grid-cols-3 gap-4">
-            
-            {{
-                macros.tile_empty(
-                    title='<span class="text-yellow-500">Minimum</span> en <span class="text-yellow-500">maximum temperatuur</span> per dag in '+dict_destination['Place']+' in '+dict_destination['month_name'],
-                    cs=3,rs=3,
-                    disclaimer="Grafiek laat minimum, maximum en gemiddelde temperatuur per dag in "+dict_destination['Place']+" in "+dict_destination['month_name']+" zien, berekend over recente jaren",
-                    
-                    slug_months=True,
-                    chart='md_temp_bar'
-                    )
-            }}
-            {{
-                macros.tile_empty(
-                    title='<span class="text-yellow-500">Temperatuur per uur</span> op een gemiddelde dag in '+dict_destination['Place']+" in "+dict_destination['month_name'],
-                    cs=3,rs=3,
-                    disclaimer='Grafiek laat gemiddelde temperatuur per uur in '+dict_destination['Place']+' in '+dict_destination['month_name']+' zien, berekend over recente jaren',
-                    chart='mh_temp_area'
-                    )
-            }}
-            
-            {{
-                macros.tile_empty(
-                    title='<span class="text-yellow-500">Gemiddelde temperatuur</span> in '+dict_destination['Place']+" rondom "+dict_destination['month_name'],
-                    cs=3,rs=3,
-                    slug_months=True,
-                    chart='mm3_temp_area'
-                    )
-            }}
+        <article>
+            <h2 id="h2_temp">
+                {{ dict_ID['h2_temp'] }}
+            </h2>
+            <section>
+                <h3 id="h3_temp_minmax">{{dict_ID['h3_temp_minmax']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_temp_minmax'],
+                        
+                        slug_months=False,
+                        chart='md_temp_bar'
+                        )
+                }}
+                {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+                {{ macros.link_cpm_c() }}
+                <h3 id="h3_temp_hour">{{dict_ID['h3_temp_hour']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_temp_hour'],
+                        chart='mh_temp_area'
+                        )
+                }}
+                {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+                <h3 id="h3_temp_avg">{{dict_ID['h3_temp_avg']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_temp_avg'],
+                        slug_months=False,
+                        chart='mm3_temp_area'
+                        )
+                }}
+                {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+                {{ macros.link_cpm_c() }}
+            </section>
 
-        </div>
+            <h2 id="h2_rain">
+                {{ dict_ID['h2_rain'] }}
+            </h2>
+            <section>
+                <h3 id="h3_rain_avg">{{dict_ID['h3_rain_avg']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_rain_avg'],
+                        slug_months=False,
+                        chart='md_rain_avg_bar'
+                        )
+                }}
+                <h3 id="h3_rain_pct">{{dict_ID['h3_rain_pct']}}</h3>
+                {{
+                    macros.tile_empty(
+                        title='',
+                        cs=3,rs=3,
+                        disclaimer=dict_ID['disclaimer_rain_pct'],
+                        slug_months=False,
+                        chart='md_rain_pct_bar'
+                        )
+                }}
+                {{ macros.div_nav_months(txt=dict_ID['nav_months_goto']) }}
+                {{ macros.link_cpm_c() }}
+            </section>
+        </article>
 
-        <div class="prose text-pretty px-2">
-            <h2>Regen en kans op regen in {{dict_destination['Place']}} in {{dict_destination['month_name']}}</h2>
-            <p> Justo tincidunt turpis facilisis, faucibus egestas luctus tellus lectus. Tellus cursus orci.</p>
-        </div>
-        <div class="grid grid-cols-3 md:grid-cols-4 gap-4">
+        <div class="pt-4">
+            {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
         </div>
 
     </div >
     
     
 
-    <div class="mx-auto py-2 md:py-4 grid grid-cols-3 xl:grid-cols-6 auto-rows-[120px] auto-cols-[120px] md:auto-cols-[192px] md:auto-rows-[192px] gap-4 max-w-md md:max-w-screen-md xl:max-w-screen-xl">
-
-    
-    </div>
 </div>
 
 
 
 {% include "d3_cpm_bar_md.html"%}
+{% include "d3_cpm_bar_md_rain.html"%}
 {% include "d3_cpm_area_h.html"%}
 {% include "d3_cp_area_m3.html"%}
 
-<!-- <div id="tooltip"></div> -->
 <script>
     const data_mm3d = {{json_mm3d|tojson}};
     create_cpm_bar_md(data_mm3d, "md_temp_bar");
     
+
     const data_mm3h = {{json_mm3h|tojson}};
     const data_mh = {{json_mh|tojson}};
     create_cpm_area_h(data_mh, "mh_temp_area");
     
     const data_mm3 = {{json_mm3|tojson}};
     create_cp_area_m3(data_mm3,'mm3_temp_area',monthIndex={{month_index}});
+
+    create_cpm_bar_md_rain(data_mm3d, "md_rain_avg_bar")
+    create_cpm_bar_md_rain(data_mm3d, "md_rain_pct_bar",col='rain_pct')
 </script>
 {% endblock content %}

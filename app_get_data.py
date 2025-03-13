@@ -87,7 +87,7 @@ def process_hourly_data_with_timeout(country, place, dict_destinations, last_n_y
     return result
 
 
-
+# dict_destinations = {c:dict_destinations[c] for c in dict_destinations if c=='nederland'}
 
 for country in dict_destinations:
 

@@ -3,54 +3,127 @@
 {% block content %}
 <script src="https://d3js.org/d3.v7.js"></script>
 <script src="https://d3js.org/topojson.v3.min.js"></script> 
-<div class="mx-auto md:max-w-screen-md px-2 flex flex-col gap-4 pt-8">
-    <div class="prose mx-auto text-pretty px-2">
-        <div class="not-prose flex py-2 gap-4">
+
+{{ macros.top() }}
+
+<div class="w-full sticky top-0 bg-white z-10">
+    <div class="prose mx-auto">
+        <div class="not-prose px-2 flex py-4 gap-4">
             {{ macros.breadcrumbs_dropdown(country=country,bg='bg-gray-100') }}
-            {{ macros.menu_dropdown_details(country=country,text_placeholder='Bestemmingen in '+dict_countries[country]['country_name'],bg='bg-gray-100') }}
+            {{ macros.menu_dropdown_details(country=country,text_placeholder='Bestemmingen in '+dict_countries[country]['country_name'],bg='bg-gray-100') }}    
         </div>
+    </div>
+</div>
+
+<div class="mx-auto px-2 flex flex-col gap-4 pt-8">
+
+    <div class="prose mx-auto text-pretty px-2">
+        
         <header>
             <h1>
-                Het weer en klimaat in {{dict_countries[country]['country_name']}}
+                {{ dict_ID['h1'] }}
             </h1>
         </header>
          
-        {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-8 pb-4">
+            {{ macros.tile_QA(dictQA_country,'month_warmest') }}
+            {{ macros.tile_QA(dictQA_country,'month_coldest') }}
+        </div>
+
+        <div class="pt-4">
+            {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
+        </div>
         
-        <article>    
-            <p>X Op deze pagina vind je data voor temperatuur en regen voor <span class="inline-block">{{dict_countries[country]['n_places']}} bestemmingen</span> in {{dict_countries[country]['country_name']}}</p>
-            <p>X Algemene statistieken, warmste plek, warmste maand, meeste en minste neerslag</p>
-            <h2 id="h2_temp">Temperatuur in {{dict_countries[country]['country_name']}}</h2>
+        <article>
+            <h2 id="h2_temp">
+                {{dict_ID['h2_temp']}}
+            </h2>
             <section>
-                <h3 id="heatmap_tavg_med"><span class="text-yellow-500">Gemiddelde temperatuur</span> per maand</h3>
-                <h4 id="mapview_tavg_med">Kaart (animatie) gemiddelde temperatuur</h4>
-                <p>Kaart met gemiddelde temperatuur per maand in {{dict_countries[country]['country_name']}}. Druk op de knop om animatie te starten of pauzeren.</p>
-                {{ macros.map_country(col='tavg_med') }}
-                <h4 id="tableview_tavg_med">Tabel met gemiddelde temperatuur in {{dict_countries[country]['country_name']}}</h4>
-                <p>Sorteer oplopend of aflopend per maand door op de maand te klikken</p>
+                <h3 id="h3_temp_avg">
+                    {{ dict_ID['h3_temp_avg'] }}
+                </h3>
+                <h4 id="h4_temp_avg_map">
+                    {{ dict_ID['h4_temp_avg_map'] }}
+                </h4>
+                <p class="text-sm">
+                    {{ dict_ID['p_map_instructions'] }}
+                </p>
+                <div>
+                    {{ macros.map_country(col='tavg_med') }}
+                </div>
+                
+                <h4 id="h4_temp_avg_table">
+                    {{ dict_ID['h4_temp_avg_table'] }}
+                </h4>
+                <p>
+                    {{ dict_ID['p_temp_avg_table'] }}
+                </p>
+                <p class="text-sm max-w-96">
+                    {{ dict_ID['p_table_instructions'] }}
+                </p>
                 <div class="not-prose">
                     {{macros.table_m_c(df_m_country,col='tavg_med')}}
                 </div>
             </section>
 
             <section>
-                <h3 id="heatmap_tmax_med"><span class="text-yellow-500">Maximum temperatuur</span> per maand</h3>
-                <h4 id="mapview_tmax_med">Kaart (animatie) maximum temperatuur</h4>
-                <p>Kaart met maximum temperatuur per maand in {{dict_countries[country]['country_name']}}. Druk op de knop om animatie te starten of pauzeren.</p>
-                {{ macros.map_country(col='tmax_med') }}
-                <h4 id="tableview_tmax_med">Tabel met maximum temperatuur in {{dict_countries[country]['country_name']}}</h4>
-                <p>Sorteer oplopend of aflopend per maand door op de maand te klikken</p>
+                <h3 id="h3_temp_max">
+                    {{ dict_ID['h3_temp_max'] }}
+                </h3>
+                <h4 id="h4_temp_max_map">
+                    {{ dict_ID['h4_temp_max_map'] }}
+                </h4>
+                <p class="text-sm">
+                    {{ dict_ID['p_map_instructions'] }}
+                </p>
+                <div>
+                    {{ macros.map_country(col='tmax_med') }}
+                </div>
+                <h4 id="h4_temp_max_table">
+                    {{ dict_ID['h4_temp_max_table'] }}
+                </h4>
+                <p>
+                    {{ dict_ID['p_temp_max_table'] }}
+                </p>
+                <p class="text-sm max-w-96">
+                    {{ dict_ID['p_table_instructions'] }}
+                </p>
                 <div class="not-prose">
                     {{macros.table_m_c(df_m_country,col='tmax_med')}}
                 </div>
             </section>
 
-            <h2 id="h2_rain">Regen in {{dict_countries[country]['country_name']}}</h2>
+            <h2 id="h2_rain">
+                {{ dict_ID['h2_rain'] }}
+            </h2>
             <section>
-                <h3 id="heatmap_prcp_sum"><span class="text-blue-500">Regen</span> per maand</h3>
+                <h3 id="h3_rain">
+                    {{ dict_ID['h3_rain'] }}
+                </h3>
+                <p>
+                    {{ dict_ID['p_rain_table'] }}
+                </p>
+                <p class="text-sm max-w-96">
+                    {{ dict_ID['p_table_instructions'] }}
+                </p>
                 <div class="not-prose">
                     {{macros.table_m_c(df_m_country,col='prcp_sum')}}
                 </div>
+            </section>
+            
+            <div class="pt-10">
+                {{ macros.toc_anchors(dict_anchors=dict_anchors,bg='bg-gray-100') }}
+            </div>
+            
+            <h2 id="h2_faq">
+                {{ dict_ID['h2_faq'] }}
+            </h2>
+            <section>
+                {% for key in ['month_warmest','month_coldest','where_warmest','where_coldest',
+                'where_max_always_20','where_max_always_25','where_max_always_30',
+                'when_med_around_20','when_med_around_25','when_med_around_30'] %}
+                {{ macros.div_FAQ(dictQA_country,key) }}
+                {% endfor %}
             </section>
             
         </article>

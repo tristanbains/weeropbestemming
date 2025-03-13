@@ -32,7 +32,12 @@
 %} -->
 
 
+
 <!-- Breadcrumbs: -->
+<!-- Footer: -->
+
+
+
 {% macro breadcrumbs(country_name,place_name=None,month_name=None) %}
 <div class="breadcrumbs">
     <ul>
@@ -75,10 +80,6 @@
 </div>
 {% endmacro %}
 
-<!-- Months: -->
-{% macro links_months(country_name,place_name,list_month,month_n=None) %}
-
-{% endmacro %}
 
 <!-- Table mm3d: -->
 <!-- m	m3	d	tmin_avg	tavg_avg	tmax_avg	prcp_avg	wspd_avg	rain_pct -->
@@ -107,8 +108,6 @@
         </tbody>
     </table>
 </div>
-
-
 {% endmacro %}
 
 <!-- Menu's, breadcrumbs: -->
@@ -155,40 +154,8 @@
                     <path d="M0 0L3 3L0 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
                     </path>
                 </svg>
-<!-- <svg
-    xmlns="http://www.w3.org/2000/svg"
-    class="h-4 w-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor">
-    <path
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="1"
-    d="M9.343 18.657a1 1 0 0 1-.707-1.707l4.95-4.95-4.95-4.95a1 1 0 0 1 1.414-1.414l5.657 5.657a1 1 0 0 1 0 1.414l-5.657 5.657a1 1 0 0 1-.707.293z" />
-</svg> -->
 {% endmacro %}
 
-<!-- Assumes dict_countries is available -->
-<!-- {% macro menu_dropdown_places(country,text_placeholder='',bg=None) %}
-<nav class="text-sm flex items-center max-w-fit gap-1 rounded-xl{%if bg%} {{bg}} py-1 px-2{%endif%}">
-    <div class="dropdown">
-        <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
-            {{text_placeholder}}
-            <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>
-        </div>
-        <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
-            <ul class="menu w-60 p-2">
-                {% for p in dict_countries[country]['list_place_slugs'] %}
-                <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
-                    <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
-                </a></li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-</nav>
-{% endmacro %} -->
 
 {% macro menu_dropdown_details(country,place=None,text_placeholder='',bg=None) %}
 <nav class="text-sm flex items-center max-w-fit gap-1 rounded-xl{%if bg%} {{bg}} py-1 px-2{%endif%}">
@@ -197,22 +164,39 @@
             {{text_placeholder}}
             <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>
         </div>
-        <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
-            <ul class="menu {%if place %}w-80{% else %}w-60{% endif %} p-2">
-                {% if place %}
-                    {% for m in list_months_slug %}
-                    <li class="group"><a class="font-medium" href="{{url_for('country_place_month',country=country,place=place,month=m)}}">
-                        <span class="">Weer in {{dict_destinations_clean[country][place]['Place']}} in </span><span class="font-semibold text-sky-500">{{list_months[loop.index-1]}}</span>
-                    </a></li>
-                    {% endfor %}
-                {% else %}
-                    {% for p in dict_countries[country]['list_place_slugs'] %}
-                    <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
-                        <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
-                    </a></li>
-                    {% endfor %}
-                {% endif %}
-            </ul>
+        <div tabindex="0" class="-ml-16 md:-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            {% set n_threshold = 12 %}
+            {% set dc_lps = dict_countries[country]['list_place_slugs'] %}
+            {% set dc_lps_len = dc_lps | length | int %}
+            {% set n_mid = ((dc_lps_len/2) | round(0,'ceil') |int) %}
+            {% set boolean_threshold = (n_mid>n_threshold) %}
+            <div class="grid {% if boolean_threshold and not place %}grid-cols-2 w-96{% else %}w-72{% endif %}">
+                <ul class="menu p-2">
+                    {% if place %}
+                        {% for m in list_months_slug %}
+                        <li class="group"><a class="font-medium" href="{{url_for('country_place_month',country=country,place=place,month=m)}}">
+                            <p>
+                                <span class="text-xs">Weer in {{dict_destinations_clean[country][place]['Place']}} in </span><span class="font-semibold text-sky-500">{{list_months[loop.index-1]}}</span>
+                            </p>
+                        </a></li>
+                        {% endfor %}
+                    {% else %}
+                        {% for p in dc_lps %}
+                            {% if boolean_threshold and (loop.index == (n_mid+1)) %}
+                            </ul><ul class="menu p-2">
+                            {% endif %}
+                            <li>                                
+                                <a class="font-medium {%if (p==place)%}border-2{%endif%}" href="{{url_for('country_place',country=country,place=p)}}">
+                                    <p>
+                                        <span class="text-xs">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
+                                    </p>
+                                    
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
@@ -220,6 +204,7 @@
 
 <!-- Assumes dict_countries is available -->
 {% macro breadcrumbs_dropdown(country,place=None,month=None,bg=None) %}
+{% set ns = namespace(threshold_split=11, counter_split_c=0, counter_split_cp=0) %}
 <nav class="text-sm flex items-center max-w-fit gap-1 rounded-xl{%if bg%} {{bg}} py-1 px-2{%endif%}">
     <div class="dropdown">
         <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
@@ -227,34 +212,27 @@
             <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>
         </div>
         <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
-            <ul class="menu grid grid-cols-2 w-80 p-2">
-                {% if place %}
-                <li class="col-span-2"><a class="font-medium group" href="{{url_for('country',country=country)}}">
-                    <span class="text-sky-500 font-semibold group-hover:underline">
-                        Weer en klimaat in {{dict_countries[country]['country_name']}}
-                    </span>
-                </a></li>
-                <div class="col-span-2 divider -my-1 px-3 max-w-52"></div>
-                {% endif %}
-                {% for c in dict_countries %}
-                {% if place %}
-                {% if c!=country %}
-                <li><a class="font-medium group" href="{{url_for('country',country=c)}}">
-                    <span class="text-sky-500 font-semibold group-hover:underline">{{dict_countries[c]['country_name']}}</span>
-                </a></li>
-                {% endif %}
-                {% else %}
-                <li><a class="font-medium group" href="{{url_for('country',country=c)}}">
-                    <span class="text-sky-500 font-semibold group-hover:underline">
-                        {{dict_countries[c]['country_name']}}
-                    </span>
-                </a></li>
-                {% endif %}
-                {% endfor %}
-            </ul>
+            {% set ns.dc = dict_countries %}
+            {% set ns.dc_len = ns.dc | length %}
+            {% set split_n = (ns.dc_len / 2) | round(0, 'ceil') | int %}
+            <div class="grid grid-cols-2 w-96">
+                <ul class="menu p-2">
+                    {% for c in ns.dc %}
+                        {% if loop.index == (split_n+1)%}
+                        </ul>
+                        <ul class="menu p-2">
+                        {% endif %}
+                        <li class="">
+                            <a class="font-medium {%if (c==country)%}bg-gray-50 border-2{%endif%}" href="{{url_for('country',country=c)}}">
+                                <p>
+                                    <span class="text-xs">Weer in </span><span class="font-semibold text-sky-500">{{dict_countries[c]['country_name']}}</span>
+                                </p>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-        {% if month %}
-        {% endif %}
     </div>
 
     {% if place %}
@@ -263,100 +241,60 @@
             {{dict_destination['Place']}}
             <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>    
         </div>
-        <div tabindex="0" class="-ml-3 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
-            <div>
-            <ul class="menu w-60 p-2">
-                {% if month %}
-                <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=place)}}">
-                    <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[place]['Place']}}</span>
-                </a></li>
-                <div class="divider -my-1 px-3"></div>
-                {% endif %}
-                {% for p in dict_countries[country]['list_place_slugs'] %}
-                {% if month %}
-                    {% if p!= place%}
-                    <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
-                        <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
-                    </a></li>
-                    {% endif %}
-                {% else %}
-                <li class="group"><a class="font-medium" href="{{url_for('country_place',country=country,place=p)}}">
-                    <span class="">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
-                </a></li>
-                {% endif %}
-                
-                {% endfor %}
-            </ul>
+        <div tabindex="0" class="-ml-4 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            
+            {% set ns.dcc_lps = dict_countries[country]['list_place_slugs'] %}
+            {% set ns.dcc_lps_len = ns.dcc_lps | length %}
+            {% set boolean_split_cp = (ns.dcc_lps_len > ns.threshold_split)%}
+            {% set split_n = ns.dcc_lps_len if (not boolean_split_cp) else (ns.dcc_lps_len / 2) | round(0, 'ceil') | int %}
+            
+            <div class="grid {% if boolean_split_cp %}grid-cols-2 w-96{%else%}w-60{% endif %}">
+                    <ul class="menu p-2">
+                        {% for p in ns.dcc_lps %}
+                            {% if loop.index == (split_n+1)%}
+                        </ul>
+                        <ul class="menu p-2">
+                            {% endif %}
+                            <li class="">
+                                <a class="font-medium {%if (p==place)%}border-2{%endif%}" href="{{url_for('country_place',country=country,place=p)}}">
+                                    <p>
+                                        <span class="text-xs">Weer in </span><span class="font-semibold text-sky-500">{{dict_destinations_country[p]['Place']}}</span>
+                                    </p>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
             </div>
         </div>
-        {% if month %}
-        {% endif %}
     </div>
     {% endif %}
 
 
     {% if month %}
-    <div class="dropdown max-md:dropdown-end">
+    <div class="dropdown">
         <div tabindex="0" role="button" class="flex group items-center font-medium hover:underline hover:text-sky-500 px-2 rounded-xl{%if bg%} {{bg}} py-1 hover:bg-gray-200{%endif%}">
             {{dict_destination['month_name']}}
-            <svg viewBox="0 0 24 24" class="items-end group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>    
+            <svg viewBox="0 0 24 24" class=" group-hover:stroke-sky-500 mt-1 h-3 w-3 ml-0.5"><path d="M18.4 7.4 12 13.7 5.6 7.4 4.2 8.8l7.8 7.8 7.8-7.8z"></path></svg>    
         </div>
-        <div tabindex="0" class="md:-ml-16 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+        <div tabindex="0" class="-ml-16 dropdown-content z-[1] mt-2 rounded-box bg-white shadow">
+            <div class="w-96">
+                <ul class="menu p-2">
+                    {% for i in range(12) %}
+                    <li><a class="font-medium" href="{{url_for('country_place_month',country=country,place=place,month=list_months_slug[i])}}">
+                        <p>
+                            <span class="text-xs">Weer in {{dict_destination['Place']}} in</span> <span class="font-semibold text-sky-500">{{list_months[i]}}</span>
+                        </p>   
+                    </a></li>
+                {% endfor %}
+                </ul>
+            </div>
             
-            <ul class="menu w-80 p-2">
-                {% for i in range(12) %}
-            <li><a class="font-medium" href="{{url_for('country_place_month',country=country,place=place,month=list_months_slug[i])}}">
-                Weer in {{dict_destination['Place']}} in <span class="font-semibold text-sky-500">{{list_months[i]}}</span>
-            </a></li>
-            {% endfor %}
-            </ul>
         </div>
     </div>
     {% endif %}
 
 
 </nav>
-{% endmacro %}
-
-<!-- Assumes dict_destinations_country is available -->
-{% macro breadcrumbs_menu(country,place=None,month=None,bg=None) %}
-<div tabindex="0" class="z-10 menu menu-horizontal rounded-full{%if bg%} {{bg}}{%endif%}">
-    <li>
-        <a class="hover:text-sky-500" href="{{url_for('home')}}">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-        </a>
-    </li>
-    <li>
-        <a href="">{{dict_destination['Country']}}</a>
-    </li>
-    {% if place %}
-    <li><a href="">{{dict_destination['Place']}}</a></li>
-    {% endif %}
-    {% if month %}
-    <li>
-        <details>
-            <summary>{{dict_destination['month_name']}}</summary>
-            <ul tabindex="0">
-                {% for i in range(12) %}
-                <li><a href="{{ url_for('country_place_month',country=country,place=place,month=list_months_slug[i]) }}">{{list_months[i]}}</a></li>
-                {% endfor %}
-            </ul>
-        </details>
-    </li>
-    <!-- <li><a href="">{{dict_destination['month_name']}}</a></li> -->
-    {% endif %}
-</div>
 {% endmacro %}
 
 
@@ -391,7 +329,7 @@
 
 <!-- dict_anchors = {'anchor1':{'el':'h2','text':'Temperature in ...'},'anchor2':{...}} -->
 {% macro toc_anchors(dict_anchors,toc_title=None,bg=None) %}
-<nav class="not-prose py-4{%if bg%} {{bg}} rounded-lg px-4{%endif%}">
+<nav class="not-prose{%if bg%} {{bg}} rounded-lg -mx-4 px-6 pt-4 pb-4{%endif%}">
     {%if toc_title%}
     <h5 class="text-slate-900 font-semibold mb-4 text-sm leading-6">{{toc_title}}</h5>
     {%endif%}
@@ -447,21 +385,12 @@
 {% endmacro %}
 
 {% macro tile_empty(title,txt,cs,rs,month=None,chart=None,id=None,disclaimer=None,anchor=None,slug_months=None) %}
-<div {%if id%}id='{{id}}'{%endif%} class="bg-white flex flex-col rounded-3xl p-6 md:p-8 place-content-between
+<div {%if id%}id='{{id}}'{%endif%} class="bg-white flex flex-col rounded-3xl  place-content-between
 {% if cs==2%}col-span-2{%elif cs==3%}col-span-3{%else%}col-span-1{% endif %}
 {% if rs==2%}row-span-2{%elif rs==3%}row-span-3{%else%}row-span-1{% endif %}">
     <div class="max-w-96 pl-4">
         {%if title%}
         <h3 {%if anchor%}id="#{{anchor}}" {%endif%}class="font-semibold text-lg xl:text-xl text-pretty">
-        
-            <!-- {%if country or place or month%}
-            <span class="text-sm xl:text-base text-sky-500">
-                {%if country%}{{country}}{%endif%}
-                {%if place%}{{place}} {%endif%}
-                {%if month%}{{month}}{%endif%}
-            </span>
-            <br>
-            {%endif%} -->
             {% if title %}
             <span>{{title|safe}}</span>
             {%endif%}
@@ -542,8 +471,6 @@
                         {{col_m}}
                     </div>
                 </div>
-                <!-- <a title="Weer en temperatuur voor {{dict_countries[country]['list_place_names'][outer_loop.index-1]}} in {{list_months[i]}}" href="{{url_for('country_place_month',country=country,place=p,month=list_months_slug[i])}}">
-                </a> -->
             </td>
             {% endfor %}
         </tr>
@@ -556,7 +483,7 @@
 
 <!-- Assumes list_months3, dict_countries, country are available -->
 {% macro table_m_c(df_m_country,col='tavg_med',colname_place='Bestemming',caption=None) %}
-<!-- <div class=""> -->
+
     <table id="table_{{col}}_m_c" class="sortable-table">
         {%if caption%}
         <caption class="caption-bottom pt-2">
@@ -580,10 +507,9 @@
             {% set outer_loop = loop %}
             
             <tr class="group hover:bg-gray-100">
-                <!-- <a href="{{ url_for('country_place',country=country,place=p) }}"> -->
                 <td class="rounded-l-lg pl-2 pr-2">
                     <div class="{%if (outer_loop.index-1)%5==0 and outer_loop.index>1 %}mt-0 {%endif%}flex items-center">
-                        <!-- {{dict_countries[country]['list_place_names'][loop.index-1]}} -->
+                        
                         <a class="text-sm md:text-base font-semibold underline group-hover:text-sky-500" href="{{url_for('country_place',country=country,place=p)}}">
                             {{dict_countries[country]['list_place_names'][loop.index-1]}}
                         </a>
@@ -615,17 +541,13 @@
                             {{col_pm}}
                         </div>
                     </div>
-                    <!-- <a title="Weer en temperatuur voor {{dict_countries[country]['list_place_names'][outer_loop.index-1]}} in {{list_months[i]}}" href="{{url_for('country_place_month',country=country,place=p,month=list_months_slug[i])}}">
-                    </a> -->
                 </td>
-            <!-- </a> -->
                 {% endfor %}
             </tr>
             {% endfor %}
 
         </tbody>
     </table>
-<!-- </div> -->
 {% endmacro %}
 
 
@@ -643,12 +565,6 @@
 
 {% macro map_country(col) %}
 <div class="relative">
-    <!-- <div class="flex justify-end">
-        <div class="flex gap-2 items-center px-2">
-            <p id="text_{{col}}" class="font-semibold text-lg"></p>
-            {{ play_pause(id='button_'+col) }}
-        </div>
-    </div> -->
     <div class="not-prose absolute flex top-2 gap-2 items-center px-3 py-2 {%if country in ['portugal'] %}flex-row-reverse {% else %}right-2{% endif %}">
         <p id="text_{{col}}" class="prose font-semibold text-lg"></p>
         {{ play_pause(id='button_'+col) }}
@@ -666,5 +582,616 @@
         {% endif %}
 
     </div>
+</div>
+{% endmacro %}
+
+<!-- QA -->
+
+<!-- Assumes list_months, dict_destinations_data available: -->
+{% macro tile_QA(dict_QA,key) %}
+
+<div class="not-prose gap-2">
+    <div class="flex font-light text-sm px-1 pb-2">
+        {{dict_ID['tile_'+key]}}
+    </div>
+    <div class="flex gap-1">
+        {% if key in ['month_warmest','month_coldest'] %}
+            {% for m in dictQA_country[key]['m'] %}
+            {% set t = dictQA_country[key]['max'][loop.index-1]| round(0) | int %}
+            {% set ns = namespace(bg_col_pm='bg-white', found_match=False) %}
+            {% for col_threshold, color_class in palette_temperatures.items() %}
+                {% if t <= col_threshold and not ns.found_match %}
+                    {% set ns.bg_col_pm = color_class %}
+                    {% set ns.found_match = True %} 
+                {% endif %}
+            {% endfor %}
+            <div class="text-sm font-semibold text-center">
+                <div class="{{ns.bg_col_pm}} w-8 h-8 rounded-full py-1">{{ t }}</div>
+                <div class="font-medium">{{ list_months3[m-1] }}</div>
+                 
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% if key in ['where_warmest','where_coldest'] %}
+            <div class="">
+            {% for p in dictQA_country[key]['place'] %}
+                {% set outer_loop_p = loop %}
+                <div class="flex gap-2 pb-3">
+                    
+                    <div class="flex gap-1">
+                        {% for m in dictQA_country[key]['m'][outer_loop_p.index-1] %}
+                        {% set t = dictQA_country[key]['max'][outer_loop_p.index-1][loop.index-1] | round(0) | int %}
+                        {% set ns = namespace(bg_col_pm='bg-white', found_match=False) %}
+                        {% for col_threshold, color_class in palette_temperatures.items() %}
+                            {% if t <= col_threshold and not ns.found_match %}
+                                {% set ns.bg_col_pm = color_class %}
+                                {% set ns.found_match = True %} 
+                            {% endif %}
+                        {% endfor %}
+                        <div class="text-sm font-semibold text-center">
+                            <div class="{{ns.bg_col_pm}} w-8 h-8 rounded-full py-1">{{ t }}</div>
+                            <div class="font-medium">{{ list_months3[m-1] }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="pt-1.5 pl-1 leading-5 max-w-32 font-semibold">
+                        {{dict_destinations_data[country][p]['Place']}}
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    
+</div>
+
+{% endmacro %}
+
+
+{% macro snippet_json_FAQ(dict_QA,list_keys) %}
+<script type="application/ld+json">
+    {% set counter_comma = 0 %}
+    {% set ns = namespace(counter_comma=0) %} 
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {% for key in list_keys %}
+            {% if (dict_QA[key]['m']|length > 0) or (dict_QA[key]['n_months']|length > 0) %}
+            {% if ns.counter_comma>0 %}
+            ,
+            {% endif %}
+            {% set ns.counter_comma = 1 %}
+            {
+                "@type": "Question",
+                "name": "{{dict_ID['faq_'+key+'_h3']}}",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": 
+                    "<p>
+                        {% if key in ['month_warmest','month_coldest'] %}
+                            <span>{{dict_ID['faq_'+key+'_span1']}}</span>:
+                            {% for m in dict_QA[key]['m'] %}
+                                {{list_months[m-1] }} ({{dict_QA[key]['max'][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        {% elif key in ['where_warmest','where_coldest'] %}
+                            <span>{{dict_ID['faq_'+key+'_span1']}}</span>:
+                            <ul>
+                                {% for p in dict_QA[key]['place'] %}
+                                {% set outer_loop_p = loop %}
+                                <li>
+                                    {{dict_destinations_data[country][p]['Place']}}: 
+                                    {% for m in dict_QA[key]['m'][outer_loop_p.index-1] %}
+                                    {{list_months[m-1]}}
+                                    ({{dict_QA[key]['max'][outer_loop_p.index-1][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% elif key in ['where_max_always_20','where_max_always_25','where_max_always_30'] %}
+                            {% if dict_QA[key]['place']|length > 0%}
+                            <span>{{dict_ID['faq_'+key+'_span1']}}</span>:
+                            <ul>
+                                {% for p in dict_QA[key]['place'] %}
+                                <li>
+                                    {{ dict_destinations_data[country][p]['Place'] }} ({{dict_QA[key]['n_months'][loop.index-1]}} {{dict_ID['txt_months_per_year']}})
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        {% elif key in ['when_med_around_20','when_med_around_25','when_med_around_30'] %}
+                            {% if dict_QA[key]['m']|length > 0%}
+                                <span>{{dict_ID['faq_'+key+'_span1']}}</span>:
+                                <ul>
+                                {% for m in dict_QA[key]['m'] %}
+                                {% set outer_loop_m = loop %}
+                                    <li>
+                                        {{ list_months[m|int-1] }}:
+                                        {% for p in dict_QA[key]['place'][outer_loop_m.index-1] %}
+                                            {{dict_destinations_data[country][p]['Place']}}{% if not loop.last %},{% endif %}
+                                        {% endfor %}
+                                    </li>
+
+                                {% endfor %}
+                                </ul>
+                            {% endif %}
+                        {% endif %}
+                    </p>"
+                }
+            }
+            {% endif %}
+            {% endfor %}
+        ]
+    }
+</script>
+{% endmacro %}
+
+
+
+{% macro div_FAQ(dict_QA,key) %} 
+{% if dict_QA[key]['m']|length > 0 or dict_QA[key]['place']|length > 0%}
+<div class="font-light px-4 pt-2 -mx-4 mb-2 rounded-lg">
+    <p class="font-bold text-lg -mb-2">{{dict_ID['faq_'+key+'_h3']}}</p>
+    <p class="">
+        {{dict_ID['faq_'+key+'_span1']}}
+        {% if key in ['month_warmest','month_coldest'] %}
+            {% for m in dict_QA[key]['m'] %}
+               {{list_months[m-1] }} ({{dict_QA[key]['max'][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+            {% endfor %}
+        {% elif key in ['where_warmest','where_coldest'] %}
+            <ul>
+                {% for p in dict_QA[key]['place'] %}
+                {% set outer_loop_p = loop %}
+                <li>
+                    <a class="hover:text-sky-500" href="{{ url_for('country_place',country=country,place=p) }}">
+                        {{dict_destinations_data[country][p]['Place']}}
+                    </a>
+                    : 
+                    {% for m in dict_QA[key]['m'][outer_loop_p.index-1] %}
+                    {{list_months[m-1]}}
+                    ({{dict_QA[key]['max'][outer_loop_p.index-1][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                {% endfor %}
+            </ul>
+        {% elif key in ['where_max_always_20','where_max_always_25','where_max_always_30'] %}
+            <ul>
+                {% for p in dict_QA[key]['place'] %}
+                <li>
+                    <a class="hover:text-sky-500" href="{{ url_for('country_place',country=country,place=p) }}">
+                        {{ dict_destinations_data[country][p]['Place'] }}
+                    </a>
+                     ({{dict_QA[key]['n_months'][loop.index-1]}} {{dict_ID['txt_months_per_year']}})
+                </li>
+                {% endfor %}
+            </ul>
+        {% elif key in ['when_med_around_20','when_med_around_25','when_med_around_30'] %}
+            <ul>
+            {% for m in dict_QA[key]['m'] %}
+            {% set outer_loop_m = loop %}
+                <li>
+                    <span class="font-semibold">{{ list_months[m|int-1] }}:</span>
+                    {% for p in dict_QA[key]['place'][outer_loop_m.index-1] %}
+                        <a class="hover:text-sky-500" href="{{ url_for('country_place',country=country,place=p) }}">
+                            {{dict_destinations_data[country][p]['Place']}}{% if not loop.last %},{% endif %}
+                        </a> 
+                        
+                    {% endfor %}
+                </li>
+
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+</div>
+{% endif %}
+{% endmacro %}
+
+
+<!-- LEGACY: -->
+{% macro snippet_FAQ(dict_QA,key) %}
+{% if (dict_QA[key]['m']|length > 0) or (dict_QA[key]['n_months']|length > 0) %}
+<div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 class="" itemprop="name">{{dict_ID['faq_'+key+'_h3']}}</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <div itemprop="text">
+            {% if key in ['month_warmest','month_coldest'] %}
+            <span>{{dict_ID['faq_'+key+'_span1']}}</span>:<span>
+                {% for m in dict_QA[key]['m'] %}
+                    {{list_months[m-1] }} ({{dict_QA[key]['max'][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </span>
+
+            {% elif key in ['where_warmest','where_coldest'] %}
+            <span>{{dict_ID['faq_'+key+'_span1']}}</span>:
+            <ul>
+                {% for p in dict_QA[key]['place'] %}
+                {% set outer_loop_p = loop %}
+                <li>
+                    <a href="{{ url_for('country_place',country=country,place=p) }}" class="underline hover:text-sky-500">
+                        {{dict_destinations_data[country][p]['Place']}}
+                    </a>:
+                    {% for m in dict_QA[key]['m'][outer_loop_p.index-1] %}
+                    {{list_months[m-1]}}
+                    ({{dict_QA[key]['max'][outer_loop_p.index-1][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                {% endfor %}
+            </ul>
+
+            {% elif key in ['when_med_around_20','when_med_around_25','when_med_around_30'] %}
+            <span>{{dict_ID['faq_'+key+'_span1']}}</span>:
+            <ul>
+                {% for m in dict_QA[key]['m'] %}
+                {% set outer_loop_m = loop %}
+                <li>
+                    <span class="font-semibold">{{list_months[m-1]}}</span>:
+                    {% for p in dict_QA[key]['place'][outer_loop_m.index-1] %}
+                    {{dict_destinations_data[country][p]['Place']}}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                {% endfor %}
+            </ul>
+
+            {% elif key in ['where_max_always_20','where_max_always_25','where_max_always_30'] %}
+            <span>{{dict_ID['faq_'+key+'_span1']}}</span>:
+            {% for p in dict_QA[key]['place'] %}
+
+            <a class="no-underline" href="{{ url_for('country_place',country=country,place=p) }}">
+                <span class="underline hover:text-sky-500">
+                    {{dict_destinations_data[country][p]['Place']}}
+                </span>
+                
+            </a>
+            {% if (dict_QA[key]['n_months'][loop.index-1] < 12) or (not loop.last) %}
+                <span class="font-base">
+                    {% if (dict_QA[key]['n_months'][loop.index-1] < 12) %}
+                    ({{dict_QA[key]['n_months'][loop.index-1]}} {{dict_ID['txt_months_per_year']}})
+                    {% endif %}
+                    {% if not loop.last %}, {% endif %}
+                </span>
+                {% endif %}
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endmacro %}
+
+<!-- Assumes list_months, dict_destinations_data available: -->
+{% macro QA_country(dictQA_country) %}
+<ul>
+    <li>
+        <span id="QA_text_month_warmest" class="font-semibold">Warmste maanden:</span> 
+        <span>
+        {% for m in dictQA_country['month_warmest']['m'] %}
+            {{list_months[m-1] }} ({{dictQA_country['month_warmest']['max'][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+        {% endfor %}
+        </span>
+    </li>
+    <li>
+        <span id="QA_text_month_coldest" class="font-semibold">Koudste maanden:</span> 
+        <span>
+        {% for m in dictQA_country['month_coldest']['m'] %}
+            {{list_months[m-1] }} ({{dictQA_country['month_coldest']['max'][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+        {% endfor %}
+        </span>
+    </li>
+    <li>
+        <span id="QA_text_where_warmest" class="font-semibold">Warmste plekken: (maximum temperatuur per dag)</span>
+        <span>
+            <ul>
+                {% for p in dictQA_country['where_warmest']['place'] %}
+                {% set outer_loop_p = loop %}
+                <li><span class="font-semibold">{{dict_destinations_data[country][p]['Place']}}</span>:  
+                    {% for m in dictQA_country['where_warmest']['m'][outer_loop_p.index-1] %}
+                    {{list_months[m-1]}}
+                    ({{dictQA_country['where_warmest']['max'][outer_loop_p.index-1][loop.index-1]}}℃){% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+            
+        </span>
+    </li>
+</ul>
+<p class="text-xs">{{dictQA_country}}</p>
+
+{% endmacro %}
+
+
+<!-- Header, footer -->
+
+
+{% macro footer() %}
+<footer class="bg-neutral text-neutral-content mt-10">
+    <div class="footer max-w-screen-sm mx-auto p-10">
+        <nav>
+            <h6 class="footer-title">Populaire landen</h6>
+            {% for c in dict_countries %}
+                {% if 1 in dict_countries[c]['list_superpopular'] %}
+                <a href="{{ url_for('country',country=c) }}" class="link link-hover">{{dict_countries[c]['country_name']}}</a>
+                {% endif %}
+            {% endfor %}
+        </nav>
+        <nav>
+            <h6 class="footer-title">Populaire bestemmingen</h6>
+            {% for c in dict_countries %}
+                {% for p in dict_countries[c]['list_place_slugs'] %}
+                    {% if dict_countries[c]['list_superpopular'][loop.index-1] == 1%}
+                    <a href="{{ url_for('country_place',country=c,place=p) }}" class="link link-hover">
+                        {{dict_countries[c]['list_place_names'][loop.index-1]}}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        </nav>
+    </div>
+</footer>
+{% endmacro %}
+
+<!-- Assumes base_url is available: -->
+{% macro snippet_json_breadcrumbs() %}
+<script type="application/ld+json">
+    [{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type":"ListItem",
+                "position": 1,
+                "name": "Home"
+                {% if country %}
+                ,"item": "{{ base_url+'/' }}"
+                {% endif %}
+            }
+            {% if country %}
+                ,{
+                    "@type":"ListItem",
+                    "position": 2,
+                    "name": "{{ dict_countries[country]['country_name'] }}"
+                    {% if place %}
+                    ,"item": "{{ base_url+'/'+country+'/' }}"
+                    {% endif %}
+                }
+            {% endif %}
+            {% if place %}
+                ,{
+                    "@type":"ListItem",
+                    "position": 3,
+                    "name": "{{ dict_destinations[country][place]['Place'] }}"
+                    {% if month %}
+                    ,"item": "{{ base_url+'/'+country+'/'+ place+'/'}}"
+                    {% endif %}
+                }
+            {% endif %}
+            {% if month %}
+                ,{
+                    "@type":"ListItem",
+                    "position": 4,
+                    "name": "{{ dict_destination['month_name'] }}"
+                }
+            {% endif %}
+        ]
+    }]
+</script>
+{% endmacro %}
+
+
+
+<!-- Assumes dict_destination contains month_slug, list_links_month_name, list_links_month_slug -->
+{% macro navigation_months() %}
+<nav class="flex flex-col md:flex-row gap-2">
+    {% for m in list_months_slug %}
+    {% if loop.index in [1,7] %} <div class="flex gap-2">{% endif %}
+    {% if month==m %}
+    <div class="btn btn-xs btn-neutral mt-1">
+        {{list_months3[loop.index-1]}}
+    </div>
+    {% else %}
+    <a href="{{ url_for('country_place_month',country=country,place=place,month=m) }}">
+        <div class="btn btn-xs">
+            {{list_months3[loop.index-1]}}
+        </div>
+    </a>
+    {% endif %}
+    {% if loop.index in [6,12] %}</div>{% endif %}
+    {% endfor %}
+</nav>
+
+{% endmacro %}
+
+{% macro div_nav_months(txt=None) %}
+<div class="flex flex-col gap-2 py-2">
+    {% if txt %}
+    <span class="text-xs">{{ txt }}</span>
+    {% endif %}
+    {{ navigation_months() }}
+</div>
+{% endmacro %}
+
+
+{% macro div_tabs(name="tabs_intro",bg_checked='bg-green-50') %}
+<div role="tablist" class="tabs tabs-border">
+    <input type="radio" name="{{name}}" class="tab {{bg_checked}} rounded-t-lg rounded-r-lg" aria-label="{{ dict_ID['tab_more_countries'] }}" checked/>
+    <div class="tab-content {{bg_checked}} px-4 pt-2 pb-4 rounded-b-lg rounded-e-lg">
+        {% set n_c = dict_countries | length %}
+        {% set n_third = ((n_c/3)| round(0,'ceil') |int)%}
+        <div class="pt-4 max-w-screen-sm grid grid-cols-3">
+            <div class="flex flex-col">
+            {% for c in dict_countries %}
+                {% if (loop.index-1)%n_third==0 and not loop.first%}
+                </div><div class="flex flex-col">
+                {% endif %}
+                <a href="{{ url_for('country',country=c) }}" class="link link-hover text-sky-500">
+                    {{ dict_countries[c]['country_name'] }} ({{dict_countries[c]['n_places']}})
+                </a>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% for ct in countries_tabs %}
+        {% set ddd_ct = dict_destinations_data[ct]%}
+        {% set first_destination = ddd_ct | dictsort | first | first %}
+        {% set Country = ddd_ct[first_destination]['Country'] %}
+        {% set country_slug = slug(Country) %}
+        {% set n_p = ddd_ct | length %}
+        {% set n_threshold = 3 %}
+        {% set n_mid = ((n_p/2)| round(0,'ceil') |int)%}
+        {% set n_third = ((n_p/3)| round(0,'ceil') |int)%}
+        {% set boolean_threshold = (n_third>n_threshold) %}
+        <input type="radio" name="{{name}}" class="tab rounded-t-lg" aria-label="{{Country}}"/>
+        <div class="tab-content {{bg_checked}} px-4 pt-4 pb-4 rounded-lg">
+            <div>
+                <a href="{{ url_for('country',country=country_slug) }}" class="link link-hover text-sky-500">
+                    {{ dict_ID['tab_content_all'] }} {{ Country }}
+                </a>
+            </div>
+            <div class="pt-4 max-w-screen-sm grid {%if boolean_threshold%}grid-cols-3{%endif%}">
+                <div class="flex flex-col">
+                    {% for p in ddd_ct %}
+                        {% set Place = ddd_ct[p]['Place']%}
+                        {% set place_slug = slug(Place) %}
+                        {% if boolean_threshold and ((loop.index-1)%n_third==0 and not loop.first) %}
+                        </div><div class="flex flex-col">
+                        {% endif %}
+                        <a href="{{ url_for('country_place',country=country_slug,place=place_slug) }}" class="link link-hover text-sky-500">
+                            <p>{{Place}}</p>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+
+
+
+{% endmacro %}
+
+{% macro script_tabs(name="tabs_intro",bg_checked='bg-green-50') %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabs = document.querySelectorAll('input[name="{{name}}"]');
+      const contents = document.querySelectorAll('.tab-content > div');
+      tabs.forEach((tab) => {
+        tab.addEventListener('change', () => {
+            tabs.forEach((innerTab) => {
+                innerTab.removeAttribute('checked');
+                innerTab.classList.remove('{{bg_checked}}');
+            });
+        
+        tab.setAttribute('checked', '');
+        tab.classList.add('{{bg_checked}}');
+        });
+    });
+});
+</script>
+{% endmacro %}
+
+{% macro logo2() %}
+<div class="group flex bg-yellow-200 rounded-lg">
+    <svg class="fill-yellow-400 stroke-2 stroke-yellow-700 px-1 h-8 w-8 " viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 14.6C3 14.0399 3 13.7599 3.10899 13.546C3.20487 13.3578 3.35785 13.2049 3.54601 13.109C3.75992 13 4.03995 13 4.6 13H5.4C5.96005 13 6.24008 13 6.45399 13.109C6.64215 13.2049 6.79513 13.3578 6.89101 13.546C7 13.7599 7 14.0399 7 14.6V19.4C7 19.9601 7 20.2401 6.89101 20.454C6.79513 20.6422 6.64215 20.7951 6.45399 20.891C6.24008 21 5.96005 21 5.4 21H4.6C4.03995 21 3.75992 21 3.54601 20.891C3.35785 20.7951 3.20487 20.6422 3.10899 20.454C3 20.2401 3 19.9601 3 19.4V14.6Z" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 4.6C10 4.03995 10 3.75992 10.109 3.54601C10.2049 3.35785 10.3578 3.20487 10.546 3.10899C10.7599 3 11.0399 3 11.6 3H12.4C12.9601 3 13.2401 3 13.454 3.10899C13.6422 3.20487 13.7951 3.35785 13.891 3.54601C14 3.75992 14 4.03995 14 4.6V19.4C14 19.9601 14 20.2401 13.891 20.454C13.7951 20.6422 13.6422 20.7951 13.454 20.891C13.2401 21 12.9601 21 12.4 21H11.6C11.0399 21 10.7599 21 10.546 20.891C10.3578 20.7951 10.2049 20.6422 10.109 20.454C10 20.2401 10 19.9601 10 19.4V4.6Z" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17 10.6C17 10.0399 17 9.75992 17.109 9.54601C17.2049 9.35785 17.3578 9.20487 17.546 9.10899C17.7599 9 18.0399 9 18.6 9H19.4C19.9601 9 20.2401 9 20.454 9.10899C20.6422 9.20487 20.7951 9.35785 20.891 9.54601C21 9.75992 21 10.0399 21 10.6V19.4C21 19.9601 21 20.2401 20.891 20.454C20.7951 20.6422 20.6422 20.7951 20.454 20.891C20.2401 21 19.9601 21 19.4 21H18.6C18.0399 21 17.7599 21 17.546 20.891C17.3578 20.7951 17.2049 20.6422 17.109 20.454C17 20.2401 17 19.9601 17 19.4V10.6Z" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <!-- <div>LOGO</div> -->
+</div>
+{% endmacro %}
+
+{% macro logo() %}
+<div class="h-8 w-8">
+    <img src="{{ url_for('static', filename='images/favicon/favicon.svg') }}" alt="{{base_url}} logo">
+</div>
+{% endmacro %}
+
+
+{% macro breadcrumbs_cp() %}
+<div class="bg-gray-100s rounded-lg -mx-4 p-4">
+    <div class="flex gap-2 text-sm items-baseline">
+        <a href="{{url_for('home')}}">Home</a>
+        <span class="text-gray-400 text-xs">▷</span>
+        <a href="{{url_for('country',country=country)}}">
+            {{ dict_destinations_country[place]['Country'] }}
+        </a>
+        <span class="text-gray-400 text-xs">▷</span>
+        {% if month %}
+        <a href="{{url_for('country_place',country=country,place=place)}}">
+            {{ dict_destinations_country[place]['Place'] }}
+        </a>
+        <span class="text-gray-400 text-xs">▷</span>
+        <span>{{dict_destination['month_name']}}</span>
+        {% else %}
+        <span>
+            {{ dict_destinations_country[place]['Place'] }}
+        </span>
+        {% endif %}
+        
+        
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro top() %}
+<div class="w-full bg-yellow-50 border-1 mb-2">
+    <div class="mx-auto max-w-screen-lg">
+        <div class="flex justify-between items-center px-4 pt-4 pb-4">
+            <a href="{{ url_for('home') }}">
+                <div class="flex items-center gap-2">
+                    {{ logo() }}
+                    <p class="align-baseline font-bold leading-6">
+                        {% set dict_classes = {'first':'text-yellow-700','second':'text-yellow-700 ','unimportant':'font-light px-[2px]','extension':'text-xs font-light'} %}
+                        {% for part in dict_logo %}
+                        <span class="{{dict_classes[dict_logo[part]['classes']]}}">{{dict_logo[part]['txt']}}</span>
+                        {% endfor %}
+                    </p>
+                </div>
+            </a>
+            
+                <div class="pr-10 font-semibold text-sm flex gap-4">
+                    
+                    <a href="{{ url_for('sitemap') }}" class="link link-hover align-baseline">Sitemap</a>
+                </div>
+            
+            
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro sitemap_anchors() %}
+<div class="mt-6 bg-gray-50 -mx-4 p-4 rounded-lg">
+    <p class="text-light text-sm py-2 px-1">{{dict_ID['p_go_anchor']}}</p>
+    {% for c in dict_countries %}
+    <a class="group" href="#{{c}}">
+        <button class="btn btn-xs mr-2 my-1 bg-gray-200 rounded-lg">
+            {{ dict_countries[c]['country_name'] }} <div class="badge badge-sm">{{dict_countries[c]['n_places']}}</div>
+        </button>
+    </a>
+    {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro link_cp_c() %}
+<div class="text-xs pt-2">
+    {{ dict_ID['p_link_cp_c_macro'] }}
+    <a href="{{ url_for('country',country=country) }}" class="link link-hover text-sky-500">
+        {{dict_destination['Country']}}
+    </a>
+</div>
+{% endmacro %}
+
+{% macro link_cpm_c() %}
+<div class="text-xs pt-2">
+    {{ dict_ID['p_link_cpm_c_macro_1'] }}
+    <a href="{{ url_for('country',country=country) }}" class="link link-hover text-sky-500">
+        {{dict_ID['p_link_cpm_c_macro_2']}}
+
+        {{dict_destination['Country']}}
+    </a>
 </div>
 {% endmacro %}

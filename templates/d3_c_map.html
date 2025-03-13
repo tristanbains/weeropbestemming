@@ -66,14 +66,7 @@ function create_c_map(topojsonData, data_map, targetElementId='map_destinations'
         const dataWidth = Math.abs(x1 - x0);
         const dataHeight = Math.abs(y1 - y0);
         let dataAspectRatio = dataWidth / dataHeight;
-
-
-        // console.log(topojsonData);
-        // console.log(topojsonData.bbox);
-        // console.log(`bbox: ${topojsonData.bbox}`);
-        // console.log(`dataAspectRatio before: ${dataAspectRatio}`);
         dataAspectRatio = Math.max(dataAspectRatio,0.8);
-        // console.log(`dataAspectRatio after: ${dataAspectRatio}`);
   
         if (dataAspectRatio > 1) { // Data is wider than it is tall
             width = height * dataAspectRatio; 
@@ -82,12 +75,7 @@ function create_c_map(topojsonData, data_map, targetElementId='map_destinations'
         }
         
         let fontSize = width/factor_text;
-        // let fontSize = Math.max(width,height)/factor_text;
-        // console.log(`bounds: ${bounds}`);
-        // console.log(`centroid: ${path.centroid(countries)}`);
-        // console.log(`width: ${width}`);
-        // console.log(`height: ${height}`);
-        // console.log(countries);
+
         projection.fitExtent([[0, 0], [width, height]], countries);
 
         svg.attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`);
@@ -99,7 +87,7 @@ function create_c_map(topojsonData, data_map, targetElementId='map_destinations'
                 .attr("d", path)
                 .attr("class", d => d.properties.highlight === 'inactive' ? 'fill-gray-50' : 'fill-gray-200')
                 .attr("data-iso3", d => d.properties.iso3)
-                .classed('stroke-white stroke-1',true);
+                .classed('stroke-gray-200 stroke-1',true);
 
         const g = svg.append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -123,8 +111,6 @@ function create_c_map(topojsonData, data_map, targetElementId='map_destinations'
                     .classed('font-bold fill-red-500',function(d){
                         if(d.Place === place_name && place_name != ''){return true}else{return false}
                     })
-                    // .attr("text-anchor", "middle")
-                    // .attr("dy", "0.3em")
                     .attr("text-anchor", function(d) { 
                         if (d.Label && d.Label.includes('r')) { 
                             return "start"; 

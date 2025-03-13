@@ -11,6 +11,7 @@ import os
 import math
 import polars as pl
 import polars.selectors as cs
+import re
 
 
 ## -------- Input data -------- 
@@ -60,11 +61,101 @@ def create_dict_destinations(df_destinations):
         if country not in dict_destinations:
             dict_destinations[country]={}
         dict_destinations[country][place] = {col:v[col] for col in cols}
-        
+        dict_destinations[country][place]['Country_NL']=v['Country']
+        dict_destinations[country][place]['Place_NL']=v['Place']
+        dict_destinations[country][place]['data_country']=country
+        dict_destinations[country][place]['data_place']=place
+
         # if lat is None or np.isnan(lat):
         #     dict_latlon = add_latlon(country=v['Country'],place=v['Place'])
         #     dict_destinations[country][place].update(dict_latlon)
     return(dict_destinations)
+
+
+def translate_dict_destinations(dict_destinations,lang='NL'):
+    dict_out = {}
+    if lang != 'NL':
+        for c in dict_destinations:
+            for p in dict_destinations[c]:
+                Ct = dict_destinations[c][p]['Country_'+lang]
+                ct = Ct.replace(' ','-').lower()
+                if ct not in dict_out:
+                    dict_out[ct]={}
+                Pt = dict_destinations[c][p]['Place_'+lang]
+                pt = Pt.replace(' ','-').lower()
+                dict_out[ct][pt]=dict_destinations[c][p]
+                for col in ['Country','Place','Region','Continent']:
+                    dict_out[ct][pt][col]=dict_out[ct][pt][col+'_'+lang]
+                # dict_out[ct][pt]['Country']=dict_out[ct][pt]['Country_'+lang]
+                # dict_out[ct][pt]['Place']=dict_out[ct][pt]['Place_'+lang]
+                # dict_out[ct][pt]['Region']=dict_out[ct][pt]['Region_'+lang]
+    else:
+        dict_out=dict_destinations
+    return dict_out
+
+
+def clean_dict_destinations(dict_destinations,folder_data_processed='./data/processed'):
+   """Checks if data exist for all locations in dict_destinations and returns a cleaned up version"""
+   dict_destinations_clean = {}
+   for country in dict_destinations:
+      for place in dict_destinations[country]:
+        boolean_add_key = True
+        c = dict_destinations[country][place]['data_country']
+        p = dict_destinations[country][place]['data_place']
+        fp = os.path.join(folder_data_processed,c,p)
+        if os.path.exists(fp):
+            list_csvs = ['df_mm3d.csv','df_mm3h.csv']
+            for lc in list_csvs:
+               fpc=os.path.join(fp,lc)
+               if os.path.exists(fpc):
+                  if os.path.getsize(fpc) <= 5:
+                    boolean_add_key = False   
+               else:
+                  boolean_add_key = False
+        else:
+           boolean_add_key = False
+        if boolean_add_key:
+           if (country in dict_destinations_clean):
+              dict_destinations_clean[country].update({
+                 place:dict_destinations[country][place]
+                 })
+           else:
+              dict_destinations_clean.update({
+                 country:{place:dict_destinations[country][place]}
+                 })
+              
+   return dict_destinations_clean
+
+
+
+def create_dict_countries(dict_destinations_clean):
+   dict_countries={}
+   for k1,v1 in sorted(dict_destinations_clean.items()):
+      
+      k2s = sorted(v1.keys())
+      dict_countries[k1]={
+         'country_name':dict_destinations_clean[k1][k2s[0]]['Country'],
+         'n_places':len(list(k2s)),
+         'list_place_slugs':list(k2s),
+         'list_place_names':[dict_destinations_clean[k1][k2]['Place'] for k2 in k2s],
+         'list_popular':[dict_destinations_clean[k1][k2]['Popular'] for k2 in k2s],
+         'list_superpopular':[dict_destinations_clean[k1][k2]['Superpopular'] for k2 in k2s],
+         }
+   return dict_countries
+
+
+# Used for QA's to look up names
+def create_dict_destinations_data(dict_destinations):
+    dict_out = {}
+    for c in dict_destinations:
+        for p in dict_destinations[c]:
+            c_data = dict_destinations[c][p]['data_country']
+            if c_data not in dict_out:
+                dict_out[c_data]={}
+            p_data = dict_destinations[c][p]['data_place']
+            dict_out[c_data][p_data]=dict_destinations[c][p]
+            
+    return dict_out
 
 
 ## -------- Download data (helper functions) -------- 
@@ -299,3 +390,86 @@ def combine_csvs_country(country,folder_data_processed='./data/processed'):
                 cols_sort += [col]
         dict_dfs_country[k] = dict_dfs_country[k].sort(cols_sort)
     return(dict_dfs_country)
+
+
+
+def create_dict_ID(df_sentences,dict_vars,lang='NL'):
+    dict_out = {}
+    for i,r in df_sentences.iterrows():
+        id = r['ID']
+        s = r[lang]
+        for k in dict_vars:
+            pattern = '{'+k+'}'
+            s = re.sub(pattern,dict_vars[k],s)
+        dict_out[id] = s
+    return dict_out
+
+
+def create_dict_anchors(list_ids,dict_id):
+    dict_out = {}
+    for id in list_ids:
+        dict_out[id] = {
+            'el':id.split('_')[0],
+            'text':dict_id[id]
+        }
+    return dict_out
+
+
+def create_dictQA_country(df_m_country,**kwargs):
+    df_m_country = pl.from_pandas(df_m_country)
+    dict_out={}
+    top_n = kwargs['top_n']
+
+    df_m_temps = df_m_country.group_by(['m']).agg(
+        pl.col('tavg_med').mean().round(1).alias('mean'),
+        pl.col('tavg_med').min().alias('min'),
+        pl.col('tavg_med').max().alias('max')).sort(
+        ['mean','max'],descending=[True,True])
+    dict_out['month_warmest'] = {'m':list(df_m_temps['m'][:top_n]),
+                                 'mean':list(df_m_temps['mean'][:top_n]),
+                                 'min':list(df_m_temps['min'][:top_n]),
+                                 'max':list(df_m_temps['max'][:top_n])}
+    dict_out['month_coldest'] = {'m':list(df_m_temps['m'][::-1][:top_n]),
+                                 'mean':list(df_m_temps['mean'][::-1][:top_n]),
+                                 'min':list(df_m_temps['min'][::-1][:top_n]),
+                                 'max':list(df_m_temps['max'][::-1][:top_n])}
+
+    df_p_hot = df_m_country.group_by(['place']).agg(pl.col('tmax_med').top_k(3).mean().round(1).alias('tmax_top3'))
+    df_p_hot3 = df_m_country.select(pl.all().top_k_by('tmax_med',k=3).over('place', mapping_strategy="explode"))
+    df_p_hot = df_p_hot3.group_by(['place']).agg(pl.col('m').alias('list_m'),pl.col('tmax_med').alias('list_max')).join(df_p_hot,how='inner',on='place').sort(['tmax_top3'],descending=[True])
+    dict_out['where_warmest'] = {'place':list(df_p_hot['place'][:top_n]),
+                                 'max':[list(x) for x in df_p_hot['list_max'][:top_n]],
+                                 'm':[list(x) for x in df_p_hot['list_m'][:top_n]]}
+    
+    df_p_cold = df_m_country.group_by(['place']).agg(pl.col('tmax_med').bottom_k(k=3).mean().round(1).alias('tmax_bottom3'))
+    df_p_cold3 = df_m_country.select(pl.all().bottom_k_by('tmax_med',k=3).over('place', mapping_strategy="explode"))
+    df_p_cold = df_p_cold3.group_by(['place']).agg(pl.col('m').alias('list_m'),pl.col('tmax_med').alias('list_max')).join(df_p_cold,how='inner',on='place').sort(['tmax_bottom3'],descending=[False])
+    dict_out['where_coldest'] = {'place':list(df_p_cold['place'][:top_n]),
+                                 'max':[list(x) for x in df_p_cold['list_max'][:top_n]],
+                                 'm':[list(x) for x in df_p_cold['list_m'][:top_n]]}
+
+
+    for t in kwargs['degrees_thresholds']:
+        df_m_always = df_m_country.filter(
+            pl.col('tmax_med')>=t).group_by(['place']).agg(
+            pl.col('place').len().alias('n')
+        ).sort(['n'],descending=[True]).filter(pl.col('n')>=kwargs['months_n_always'])
+        dict_out[f'where_max_always_{t}'] = {'place':list(df_m_always['place']),'n_months':list(df_m_always['n'])}
+
+        df_around = df_m_country.filter(
+            (pl.col('tavg_med')>=(t)) & (pl.col('tavg_med')<=(t+kwargs['degrees_delta'])) & (pl.col('prcp_sum')<kwargs['c_dry'])
+        ).sort(
+            ['m','prcp_sum','tavg_med'],descending=[False,False,True])
+        df_m_around = df_around.group_by(['m']).agg(
+            pl.col('place').len().alias('n_places')).filter(
+            pl.col('n_places')>=top_n).sort(
+            ['n_places'],descending=True)
+        df_around = df_around.join(df_m_around,on='m',how='inner')
+        dict_out[f'when_med_around_{t}'] = {'m':[m for m in df_m_around['m']],
+                                            'place':[list(df_around.filter(pl.col('m')==m)['place']) for m in df_m_around['m']],
+                                             'n_places':[df_m_around.filter(pl.col('m')==m)['n_places'][0] for m in df_m_around['m']]}
+        
+
+    
+    return dict_out
+
