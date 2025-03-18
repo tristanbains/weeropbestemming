@@ -8,12 +8,15 @@ def create_sitemap_xml(base_url,folder_build,priority='1.0',change_frequency='',
     ps = [p.replace(folder_build,base_url) for p in ps]
     ps = [re.sub('(?<!\:)//','/',x) for x in ps]
     ps = [p.replace('index.html','') for p in ps]
+    ps = [urllib.parse.quote(p) for p in ps]
+    ps = [p.replace('https%3A//','https://') for p in ps]
+    ps = [p.replace('http%3A//','http://') for p in ps]
     last_modification_date = datetime.date.today()
     xml_content = f'<?xml version="1.0" encoding="UTF-8"?>\n'
     xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for p in ps:
         xml_content += f'\t<url>\n'
-        xml_content += f'\t\t<loc>{urllib.parse.quote(p)}</loc>\n'
+        xml_content += f'\t\t<loc>{p}</loc>\n'
         xml_content += f'\t\t<lastmod>{last_modification_date.strftime("%Y-%m-%d")}</lastmod>\n'
         if change_frequency != '':
             xml_content += f'\t\t<changefreq>{change_frequency}</changefreq>\n'
